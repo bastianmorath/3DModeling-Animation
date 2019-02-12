@@ -420,7 +420,21 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
     //
     // Put your code below
     // -------------------------------------------------------
+	int max_iter = 1000
+	int error = 0.01
+	// While max_iter or error small enough
+	
+	// 1. Compute Jacobian J from theta and current X
 
+	// 2. Compute Pseudoinverse J^-1
+
+	// 3. Compute delta_X
+
+	// 4. Compute delta_theta from J^-1 and delta_X
+
+	// 5. Update theta as theta + delta_theta
+
+	// 6. Do forward kinematics
 
 
 
