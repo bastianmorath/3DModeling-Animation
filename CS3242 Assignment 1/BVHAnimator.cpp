@@ -7,7 +7,7 @@
 #include "BVHAnimator.h"
 
 #include <ctime>
-
+#include "glm/ext.hpp"
 #include <iostream>
 
 #define PI 3.1415926536
@@ -423,35 +423,51 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
     //
     // Put your code below
     // -------------------------------------------------------
+
+	
 	int max_iter = 1000;
 	int num_iter = 0;
-	double vec_err = glm::distance(lhand->transform.translation, glm::vec3(x, y, z));
-	glm::vec3 destination(x, y, z);
+	glm::vec4 curPos = (lhand->matrix) * glm::vec4(_bvh->getRootJoint()->offset.x, _bvh->getRootJoint()->offset.y, _bvh->getRootJoint()->offset.z, 1);
+	std::cout << glm::to_string(lhand->transform.translation) << std::endl;
 	
+	
+	glm::vec3 end_effector(lhand->transform.translation);
+	glm::vec3 destination(x, y, z);
+
+	double vec_err = glm::distance(end_effector, destination);
+
 
 
 	// While max_iter or error small enough
-	while (num_iter < max_iter && vec_err < 0.001) {
+	while (num_iter < max_iter && vec_err > 0.1) {
 
 	// 0. Compute some vectors that are used later
-		glm::vec3 end_effector(lhand->matrix[3]); // Current position of the end_effector
-		glm::vec3 arm_position(larm->matrix[3]); // Current position of the arm
-		glm::vec3 forearm_position(lforearm->matrix[3]); // Current position of the forearm
+		glm::vec3 arm_position(larm->transform.translation); // Current position of the arm 
+		glm::vec3 forearm_position(lforearm->transform.translation); // Current position of the forearm
+		
 
 		glm::quat x_rotate_arm(cos(*LArx * PI / 360), 1, 0, 0); // Rotation around x_axis of arm
 		glm::quat y_rotate_arm(cos(*LAry * PI / 360), 0, 1, 0); // Rotation around y_axis of arm
 		glm::quat z_rotate_arm(cos(*LArz * PI / 360), 0, 0, 1); // Rotation around z_axis of arm
+
 		glm::quat y_rotate_forearm(cos(*LFAry * PI / 360), 0, 1, 0); // Rotation around y_axis of forearm
 
 	// 1. Compute Jacobian J from theta and current X with geometric method
 		glm::vec3 r1 = end_effector - arm_position; // distance from shoulder to end_effector
 		glm::vec3 r2 = end_effector - forearm_position; // distance from ellbow to end_effector
+		// std::cout << glm::to_string(lhand->transform) << std::endl;
 
-		// We have to create three separate joints for the shoulder with the same distance 
+		// We have to create three separate joints for the shoulder, all with the same distance to the end_effector
+		glm::vec3 x_axis_arm = glm::vec3(1, 0, 0);
+		glm::vec3 y_axis_arm = x_rotate_arm * glm::vec3(0, 1, 0);
+		glm::vec3 z_axis_arm = y_rotate_arm * x_rotate_arm * glm::vec3(0, 0, 1);
+		glm::vec3 axis_forearm =  z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
+		/*
 		glm::vec3 x_axis_arm = x_rotate_arm * glm::vec3(1, 0, 0);
 		glm::vec3 y_axis_arm = y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
 		glm::vec3 z_axis_arm = z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 0, 1);
 		glm::vec3 axis_forearm = y_rotate_forearm * z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
+		*/
 
 		// Cross products of rotation axis and distance
 		glm::vec3 J_0_1 = glm::cross(x_axis_arm, r1); 
@@ -464,11 +480,16 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 
 	// 2. Compute Pseudoinverse J^-1
 		glm::mat3x4 J_inv = glm::transpose(J) * glm::inverse((J * glm::transpose(J)));
+		// std::cout << glm::to_string(J_inv) << std::endl;
 
 	// 3. Compute delta_X
-		glm::vec3 delta_x = (destination - end_effector); //   / num_iter;
+		glm::vec3 delta_x((destination[0] - end_effector[0]) / max_iter,
+						  (destination[1] - end_effector[1]) / max_iter,
+						  (destination[2] - end_effector[2]) / max_iter); //   / num_iter;
+	
 	// 4. Compute delta_theta from J^-1 and delta_X
 		glm::vec4 delta_theta = J_inv * delta_x;
+		// std::cout << glm::to_string(delta_theta) << std::endl;
 
 	// 5. Update theta as theta + delta_theta
 
@@ -476,15 +497,20 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 		*LAry += delta_theta[1] * 180 / PI;
 		*LArz += delta_theta[2] * 180 / PI;
 		*LFAry += delta_theta[3] * 180 / PI;
-
+	
 	// 6. Do forward kinematics
 		_bvh->quaternionMoveTo(frame_no, scale);
 
+	// 7. Update distance from new end_effector position target
+		end_effector = lhand->transform.translation;
+		// std::cout << glm::to_string(end_effector) << std::endl;
 
+		// std::cout << glm::to_string(end_effector) << std::endl;
+
+		vec_err = glm::distance(end_effector, destination);
+		num_iter++;
 	}
-
-
-
+	
 
     // ----------------------------------------------------------
     // Do not touch

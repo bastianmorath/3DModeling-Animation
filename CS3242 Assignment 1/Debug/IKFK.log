@@ -1,17 +1,20 @@
-﻿  BVHPlayer.cpp
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(49): warning C4305: 'initializing': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(89): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(131): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(213): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(219): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(227): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(316): warning C4305: '-=': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(319): warning C4305: '+=': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(322): warning C4305: '+=': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(325): warning C4305: '-=': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(328): warning C4305: '-=': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(331): warning C4305: '+=': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(381): warning C4305: 'initializing': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(383): warning C4305: 'initializing': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhplayer.cpp(400): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+﻿  BVHAnimator.cpp
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(112): warning C4244: 'argument': conversion from 'GLdouble' to 'GLint', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(152): warning C4305: 'initializing': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(256): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(261): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(277): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(282): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(309): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(313): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(336): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(339): warning C4305: 'argument': truncation from 'double' to 'float'
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(449): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(450): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(451): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(453): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(496): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(497): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(498): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(499): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
   IKFK.vcxproj -> \\Mac\Home\Documents\CS3242\CS3242 Assignment 1\Debug\IKFK.exe

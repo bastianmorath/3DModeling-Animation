@@ -334,11 +334,11 @@ void BVH::quaternionMoveJoint(JOINT* joint, float* mdata, float scale)
     // apply parent's transfomation matrix to this joint to make the transformation global
     if (joint->parent != NULL) {
 		// Multiplying two quaternions = applying the two consecutivly
-		joint->transform.quaternion = joint->transform.quaternion * joint->parent->transform.quaternion;
+		
+		joint->transform.quaternion = joint->parent->transform.quaternion * joint->transform.quaternion;
 
 		glm::vec3 vec_rotated = glm::rotate(joint->parent->transform.quaternion, joint->transform.translation);
 		joint->transform.translation = joint->parent->transform.translation + vec_rotated;
-
 
     }
 
