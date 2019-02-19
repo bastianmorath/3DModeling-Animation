@@ -9,12 +9,12 @@
 \\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(313): warning C4305: 'argument': truncation from 'double' to 'float'
 \\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(336): warning C4305: 'argument': truncation from 'double' to 'float'
 \\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(339): warning C4305: 'argument': truncation from 'double' to 'float'
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(449): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(450): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(451): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(453): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(496): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(497): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(498): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(499): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(460): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(461): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(462): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(464): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(507): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(508): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(509): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+\\mac\home\documents\cs3242\cs3242 assignment 1\bvhanimator.cpp(510): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
   IKFK.vcxproj -> \\Mac\Home\Documents\CS3242\CS3242 Assignment 1\Debug\IKFK.exe
