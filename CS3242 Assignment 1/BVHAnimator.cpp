@@ -425,36 +425,37 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
     // -------------------------------------------------------
 
 	
-	int max_iter = 100;
+	int max_iter = 1000;
 	int num_iter = 0;
 	
 	std::cout << "translation and current Position" << std::endl;
 
-	glm::vec4 hands_position = (lhand->matrix) * glm::vec4(_bvh->getRootJoint()->offset.x, _bvh->getRootJoint()->offset.y, _bvh->getRootJoint()->offset.z, 1);
 
-	glm::vec3 end_effector = glm::vec3(hands_position[0], hands_position[1], hands_position[2]);
+	glm::vec3 end_effector = glm::vec3(lhand->matrix[3]);
 	std::cout << glm::to_string(end_effector) << std::endl;
 
 	glm::vec3 destination(x, y, z);
+
+
+	float max_distance = glm::distance(rhand->matrix[3], rarm->matrix[3]);
+	glm::vec3 larmPosition(larm->matrix[3]);
+	float curr_distance_from_shoulder = glm::distance(larmPosition, destination);
+
+	// if the target is too far away, don't do anything
+	if (curr_distance_from_shoulder > max_distance) {
+		destination = end_effector;
+	}
 
 	double vec_err = glm::distance(end_effector, destination);
 
 
 	// While max_iter or error small enough
-	while (num_iter < max_iter && vec_err > 0.1) {
+	while (num_iter < max_iter && vec_err > 0.03) {
 
 	// 0. Compute some vectors that are used later
-		glm::vec4 arm_pos = (larm->matrix) * glm::vec4(_bvh->getRootJoint()->offset.x, _bvh->getRootJoint()->offset.y, _bvh->getRootJoint()->offset.z, 1);
 
-		glm::vec3 arm_position = glm::vec3(arm_pos[0], arm_pos[1], arm_pos[2]);
-		
-		glm::vec4 forearm_pos = (lforearm->matrix) * glm::vec4(_bvh->getRootJoint()->offset.x, _bvh->getRootJoint()->offset.y, _bvh->getRootJoint()->offset.z, 1);
-
-		glm::vec3 forearm_position = glm::vec3(forearm_pos[0], forearm_pos[1], forearm_pos[2]);
-
-
-		//glm::vec3 arm_position(larm->transform.translation); // Current position of the arm 
-		//glm::vec3 forearm_position(lforearm->transform.translation); // Current position of the forearm
+		glm::vec3 arm_position(larm->matrix[3]); // Current position of the arm 
+		glm::vec3 forearm_position(lforearm->matrix[3]); // Current position of the forearm
 		
 
 		glm::quat x_rotate_arm(cos(*LArx * PI / 360), 1, 0, 0); // Rotation around x_axis of arm
@@ -473,12 +474,7 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 		glm::vec3 y_axis_arm = x_rotate_arm * glm::vec3(0, 1, 0);
 		glm::vec3 z_axis_arm = y_rotate_arm * x_rotate_arm * glm::vec3(0, 0, 1);
 		glm::vec3 axis_forearm =  z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
-		/*
-		glm::vec3 x_axis_arm = x_rotate_arm * glm::vec3(1, 0, 0);
-		glm::vec3 y_axis_arm = y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
-		glm::vec3 z_axis_arm = z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 0, 1);
-		glm::vec3 axis_forearm = y_rotate_forearm * z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
-		*/
+
 
 		// Cross products of rotation axis and distance
 		glm::vec3 J_0_1 = glm::cross(x_axis_arm, r1); 
@@ -490,17 +486,16 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 
 
 	// 2. Compute Pseudoinverse J^-1
-		glm::mat3x4 J_inv = glm::transpose(J) * glm::inverse((J * glm::transpose(J)));
-		// std::cout << glm::to_string(J_inv) << std::endl;
+		glm::mat3x4 J_inv = glm::transpose(J) * glm::inverse(J * glm::transpose(J) + glm::mat3(0.01*0.01));
+		//std::cout << glm::to_string(J_inv) << std::endl;
 
 	// 3. Compute delta_X
-		glm::vec3 delta_x((destination[0] - end_effector[0]) / max_iter,
-						  (destination[1] - end_effector[1]) / max_iter,
-						  (destination[2] - end_effector[2]) / max_iter); //   / num_iter;
+		glm::vec3 delta_x((destination[0] - end_effector[0]) / 1,
+						  (destination[1] - end_effector[1]) / 1,
+						  (destination[2] - end_effector[2]) / 1); //   / max_iter;
 	
 	// 4. Compute delta_theta from J^-1 and delta_X
 		glm::vec4 delta_theta = J_inv * delta_x;
-		// std::cout << glm::to_string(delta_theta) << std::endl;
 
 	// 5. Update theta as theta + delta_theta
 
@@ -513,12 +508,11 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 		_bvh->matrixMoveTo(frame_no, scale);
 
 	// 7. Update distance from new end_effector position target
-		 hands_position = (lhand->matrix) * glm::vec4(_bvh->getRootJoint()->offset.x, _bvh->getRootJoint()->offset.y, _bvh->getRootJoint()->offset.z, 1);
 
-		end_effector = glm::vec3(hands_position[0], hands_position[1], hands_position[2]);		// std::cout << glm::to_string(end_effector) << std::endl;
-		std::cout << glm::to_string(end_effector) << std::endl;
+		end_effector = glm::vec3(lhand->matrix[3]);		
 
 		vec_err = glm::distance(end_effector, destination);
+
 		num_iter++;
 	}
 	
