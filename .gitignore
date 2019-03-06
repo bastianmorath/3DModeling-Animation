@@ -3,6 +3,9 @@
 CS3242 Assignment 1/.vs/
 CS3242 Assignment 1/Debug/
 
+
+*.pdb
+*.idb
 *.db
 *.icloud
 *.ipch
@@ -12,3 +15,4 @@ CS3242 Assignment 1/Debug/
 *.obj
 *.pdb
 *.idb
+
