@@ -5,3 +5,13 @@ CS3242 Assignment 1/.vs/IKFK/v15/Browse.VC.opendb
 CS3242 Assignment 1/.vs/IKFK/v15/ipch/AutoPCH/5e10a922f1c1e6eb/BVH.ipch
 CS3242 Assignment 1/.vs/IKFK/v15/.suo
 CS3242 Assignment 1/.vs/IKFK/v15/Browse.VC.db
+*.pdb
+*.idb
+CS3242 Assignment 1/.vs/IKFK/v15/.suo
+*.db
+*.icloud
+*.ipch
+*.log
+*.ilk
+*.exe
+*.obj

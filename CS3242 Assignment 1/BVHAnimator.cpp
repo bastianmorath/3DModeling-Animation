@@ -425,32 +425,35 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
     // -------------------------------------------------------
 
 	
-	int max_iter = 1000;
+	int max_iter = 3000;
 	int num_iter = 0;
-	
-	std::cout << "translation and current Position" << std::endl;
-
+	double err_margin = 0.02;
 
 	glm::vec3 end_effector = glm::vec3(lhand->matrix[3]);
-	std::cout << glm::to_string(end_effector) << std::endl;
 
 	glm::vec3 destination(x, y, z);
 
 
-	float max_distance = glm::distance(rhand->matrix[3], rarm->matrix[3]);
+	float max_distance = glm::distance(rhand->matrix[3], rarm->matrix[3]) + err_margin - 0.01;
 	glm::vec3 larmPosition(larm->matrix[3]);
 	float curr_distance_from_shoulder = glm::distance(larmPosition, destination);
 
-	// if the target is too far away, don't do anything
+	// if the target is not reachable, translate the destination to the closest possible point to the circle with the shoulder as the center
+	// and with radius "max_distance" 
 	if (curr_distance_from_shoulder > max_distance) {
-		destination = end_effector;
+		glm::vec3 destination_direction = destination - larmPosition;
+		float distanceFromShoulder = glm::distance(larmPosition, destination);
+		float scale = max_distance / distanceFromShoulder;
+		glm::vec3 displace = destination_direction * scale;
+
+		destination = larmPosition + displace;
 	}
 
 	double vec_err = glm::distance(end_effector, destination);
 
 
-	// While max_iter or error small enough
-	while (num_iter < max_iter && vec_err > 0.03) {
+	// While max_iter not reached and error not small enough
+	while (num_iter < max_iter && vec_err > err_margin) {
 
 	// 0. Compute some vectors that are used later
 
@@ -475,7 +478,6 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 		glm::vec3 z_axis_arm = y_rotate_arm * x_rotate_arm * glm::vec3(0, 0, 1);
 		glm::vec3 axis_forearm =  z_axis_arm * y_rotate_arm * x_rotate_arm * glm::vec3(0, 1, 0);
 
-
 		// Cross products of rotation axis and distance
 		glm::vec3 J_0_1 = glm::cross(x_axis_arm, r1); 
 		glm::vec3 J_0_2 = glm::cross(y_axis_arm, r1);
@@ -487,12 +489,12 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 
 	// 2. Compute Pseudoinverse J^-1
 		glm::mat3x4 J_inv = glm::transpose(J) * glm::inverse(J * glm::transpose(J) + glm::mat3(0.01*0.01));
-		//std::cout << glm::to_string(J_inv) << std::endl;
 
-	// 3. Compute delta_X
-		glm::vec3 delta_x((destination[0] - end_effector[0]) / 1,
-						  (destination[1] - end_effector[1]) / 1,
-						  (destination[2] - end_effector[2]) / 1); //   / max_iter;
+	// 3. Compute delta_X;
+		double theta = 1.4; // (num_iter + 1.) / (num_iter) ;
+		glm::vec3 delta_x((destination[0] - end_effector[0]) / theta,
+						  (destination[1] - end_effector[1]) / theta,
+						  (destination[2] - end_effector[2]) / theta); //   / max_iter;
 	
 	// 4. Compute delta_theta from J^-1 and delta_X
 		glm::vec4 delta_theta = J_inv * delta_x;
@@ -512,8 +514,13 @@ void BVHAnimator::solveLeftArm(int frame_no, float scale, float x, float y, floa
 		end_effector = glm::vec3(lhand->matrix[3]);		
 
 		vec_err = glm::distance(end_effector, destination);
+		// std::cout << vec_err << std::endl;
 
 		num_iter++;
+
+		if (num_iter == max_iter) {
+			std::cout << "Max iter reached" << std::endl;
+		}
 	}
 	
 
