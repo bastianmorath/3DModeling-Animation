@@ -21,7 +21,7 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
-
+#include <vector>
 using namespace std;
 
 
@@ -136,10 +136,12 @@ void myObjType::readFile(char* filename)
 	}
     calculateNormals();
     calculateAngleStatistics();
+    computeFNextList();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
     computeStat();
 }
+
 
 
 double myObjType::calculateAngle(double *a, double *b){
@@ -217,6 +219,67 @@ void myObjType::calculateNormals()
     }
 }
 
+
+
+int myObjType::enext(int orTri)
+{
+    int version = orTri & 0x0000111b;
+    int triangleIndex = orTri >> 3;
+    
+    std::map<int, int> my_map = {
+        { 0, 1 },
+        { 1, 2 },
+        { 2, 0 },
+        { 3, 5 },
+        { 4, 3 },
+        { 5, 4 }
+    };
+    
+    return (triangleIndex << 3) | my_map[version];
+}
+
+int myObjType::sym(int orTri)
+{
+    int version = orTri & 0x0000111b;
+    int triangleIndex = orTri >> 3;
+    
+    std::map<int, int> my_map = {
+        { 0, 3 },
+        { 1, 4 },
+        { 2, 5 },
+        { 3, 0 },
+        { 4, 1 },
+        { 5, 2 }
+    };
+    
+    return (triangleIndex << 3) | my_map[version];
+}
+
+int myObjType::org(int orTri)
+{
+    int version = orTri & 0x0000111b;
+    int triangleIndex = orTri >> 3;
+    
+    std::map<int, int> my_map = {
+        { 0, 0},
+        { 1, 1 },
+        { 2, 2 },
+        { 3, 1 },
+        { 4, 2 },
+        { 5, 0 }
+    };
+    
+    return tlist[triangleIndex][my_map[version]];
+}
+
+int myObjType::dest(int orTri)
+{
+    return org(sym(orTri));
+}
+
+
+// PRIVATE MEMBERS
+
 void myObjType::crossProduct(double vect_A[], double vect_B[], double cross_P[])
 
 {
@@ -236,20 +299,100 @@ double myObjType::dotProduct(double vect_A[], double vect_B[])
 
 void myObjType::computeStat()
 {
-	int i;
+    int i;
     double minAngle = 0;
     double maxAngle = 0;
-
+    
     
     cout << "Min. angle = " << minAngle << endl;
     cout << "Max. angle = " << maxAngle << endl;
+    
+    cout << "Statistics for Maximum Angles" << endl;
+    for (i = 0; i < 18; i++)
+        cout << statMaxAngle[i] << " ";
+    cout << endl;
+    cout << "Statistics for Minimum Angles" << endl;
+    for (i = 0; i < 18; i++)
+        cout << statMinAngle[i] << " ";
+    cout << endl;
+}
 
-	cout << "Statistics for Maximum Angles" << endl;
-	for (i = 0; i < 18; i++)
-		cout << statMaxAngle[i] << " ";
-	cout << endl;
-	cout << "Statistics for Minimum Angles" << endl;
-	for (i = 0; i < 18; i++)
-		cout << statMinAngle[i] << " ";
-	cout << endl;
+void myObjType::computeFNextList() {
+    // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it
+    map<pair<int, int>, pair<int, int>> mymap;
+    // mymap.insert(make_pair(make_pair(1,2), 3)); //edited
+    
+    for (int i=1; i <= tcount; i++) {
+
+        int v[3] = {tlist[i][0], tlist[i][1], tlist[i][2]};
+        std::vector<int> v_vec (v, v+3);
+        std::sort(std::begin(v_vec), std::end(v_vec));
+        
+        int v0 = v_vec[0];
+        int v1 = v_vec[1];
+        int v2 = v_vec[2];
+
+        int f0 =  i >> 3 | distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][0]));
+        int f1 =  i >> 3 | distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][1]));
+        int f2 =  i >> 3 | distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][2]));
+        
+        // f0
+        std::pair<int, int> key0 = make_pair(v0, v1);
+        if (mymap.count(key0) != 0) { // One face already stored
+            mymap[key0] = make_pair(mymap[key0].first, f0); //store old and new face
+        } else {
+            mymap.insert(make_pair(key0, make_pair(f0, 0))); //store new face, leave the other blank, i.e. 0
+        }
+        
+        // f1
+        std::pair<int, int> key1 = make_pair(v1, v2);
+        if (mymap.count(key1) != 0) { // One face already stored
+            mymap[key1] = make_pair(mymap[key1].first, f1); //store old and new face
+        } else {
+            mymap.insert(make_pair(key1, make_pair(f1, 0))); //store new face, leave the other blank, i.e. 0
+        }
+        
+        // f2
+        std::pair<int, int> key2 = make_pair(v0, v2);
+        if (mymap.count(key2) != 0) { // One face already stored
+            mymap[key2] = make_pair(mymap[key2].first, f2); //store old and new face
+        } else {
+            mymap.insert(make_pair(key2, make_pair(f2, 0))); //store new face, leave the other blank, i.e. 0
+        }
+    } // Hashmap created
+    
+    for(auto& elem : mymap)
+    {
+        std::cout << "{" << elem.first.first << ",  " << elem.first.second << "}: {" <<  elem.second.first << "," << elem.second.second << "}\n";
+    }
+    
+    for (int i=1; i <= tcount; i++) {
+        int o = tlist[i][0];
+        int d = tlist[i][1];
+        
+        int current_face =  i >> 3 | 0;
+      
+        std::pair<int, int> opposite_faces = mymap[make_pair(o, d)];
+        fnlist[i][0] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+        
+        o = tlist[i][1];
+        d = tlist[i][2];
+        
+        current_face =  i >> 3 | 1;
+        opposite_faces = mymap[make_pair(o, d)];
+        fnlist[i][1] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+       
+        o = tlist[i][2];
+        d = tlist[i][0];
+        
+        current_face =  i >> 3 | 2;
+        opposite_faces = mymap[make_pair(o, d)];
+        fnlist[i][2] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+    }
+    
+    
+}
+
+void myObjType::getVersionNumber() {
+    
 }
