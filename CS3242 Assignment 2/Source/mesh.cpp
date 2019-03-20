@@ -22,11 +22,13 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
+#include <Eigen/Dense>
+
 using namespace std;
 
 
 
-void myObjType::draw() {
+void myObjType::draw(bool smooth) {
 
 	glEnable(GL_LIGHTING);
 
@@ -41,13 +43,23 @@ void myObjType::draw() {
 	glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
 	for (int i = 1; i <= tcount; i++)
 	{
-		glBegin(GL_POLYGON);
-// uncomment the following after you computed the normals
-	glNormal3dv(nlist[i]);
-		for (int j = 0; j < 3; j++)
-			glVertex3dv(vlist[tlist[i][j]]);
-		glEnd();
-	
+        // uncomment the following after you computed the normals
+        if (smooth) {
+            glBegin(GL_POLYGON);
+
+            for (int j = 0; j < 3; j++){
+                glNormal3dv(vnlist[tlist[i][j]]);
+                glVertex3dv(vlist[tlist[i][j]]);
+            }
+            glEnd();
+        } else {
+            glBegin(GL_POLYGON);
+
+            glNormal3dv(nlist[i]);
+            for (int j = 0; j < 3; j++)
+                glVertex3dv(vlist[tlist[i][j]]);
+            glEnd();
+        }
 	}
 	glDisable(GL_LIGHTING);
 
@@ -134,7 +146,8 @@ void myObjType::readFile(char* filename)
 
 		}
 	}
-    calculateNormals();
+    calculateFaceNormals();
+    calculateVertexNormals();
     calculateAngleStatistics();
     computeFNextList();
     cout << "No. of vertices: " << vcount << endl;
@@ -144,42 +157,28 @@ void myObjType::readFile(char* filename)
 
 
 
-double myObjType::calculateAngle(double *a, double *b){
-    double dot = dotProduct(a, b);
+double myObjType::calculateAngle(Eigen::Vector3d v1, Eigen::Vector3d v2){
     
-    double norm1 = sqrt(dotProduct(a, a));
-    double norm2 = sqrt(dotProduct(b, b));
-
-    return acos(dot / norm1 / norm2) *180 / M_PI;
+    double dot = v1.dot(v2);
+    
+    return acos(dot / v1.norm() / v2.norm()) *180 / M_PI;
 }
 
 void myObjType::calculateAngleStatistics()
 {
     for (int i=1; i <= tcount; i++) {
-        double *a = vlist[tlist[i][0]];
-        double *b = vlist[tlist[i][1]];
-        double *c = vlist[tlist[i][2]];
-        
-        double ab1 = b[0] - a[0];
-        double ab2 = b[1] - a[1];
-        double ab3 = b[2] - a[2];
-        double ac1 = c[0] - a[0];
-        double ac2 = c[1] - a[1];
-        double ac3 = c[2] - a[2];
-       
-        double a1[] = {ab1, ab2, ab3};
-        double a2[] = {ac1, ac2, ac3};
+        Eigen::Vector3d  v1(vlist[tlist[i][0]]);
+        Eigen::Vector3d  v2(vlist[tlist[i][1]]);
+        Eigen::Vector3d  v3(vlist[tlist[i][2]]);
 
-        double angle1 = calculateAngle(a1, a2);
+        Eigen::Vector3d  v1_to_v2(v2 - v1);
+        Eigen::Vector3d  v1_to_v3(v3 - v1);
+        Eigen::Vector3d  v2_to_v3(v3 - v1);
+
         
-        double bc1 = c[0] - b[0];
-        double bc2 = c[1] - b[1];
-        double bc3 = c[2] - b[2];
+        double angle1 = calculateAngle(v1_to_v2, v1_to_v3);
         
-        double a3[] = {-ab1, -ab2, -ab3};
-        double a4[] = {bc1, bc2, bc3};
-        
-        double angle2 = calculateAngle(a3, a4);
+        double angle2 = calculateAngle(-v1_to_v2, v2_to_v3);
         double angle3 = 180 - angle2 - angle1;
 
         int minAngle = floor(std::min(std::min(angle1, angle2), angle3) / 10);
@@ -191,34 +190,54 @@ void myObjType::calculateAngleStatistics()
     }
 }
 
-void myObjType::calculateNormals()
+void myObjType::calculateFaceNormals()
 {
     // We suggest you to compute the normals here
     for (int i=1; i <= tcount; i++) {
-        double *v0 = vlist[tlist[i][0]];
-        double *v1 = vlist[tlist[i][1]];
-        double *v2 = vlist[tlist[i][2]];
+        Eigen::Vector3d  v1(vlist[tlist[i][0]]);
+        Eigen::Vector3d  v2(vlist[tlist[i][1]]);
+        Eigen::Vector3d  v3(vlist[tlist[i][2]]);
         
+        Eigen::Vector3d  v1_to_v2(v2 - v1);
+        Eigen::Vector3d  v1_to_v3(v3 - v1);
         
-        double ab1 = v1[0] - v0[0];
-        double ab2 = v1[1] - v0[1];
-        double ab3 = v1[2] - v0[2];
-        double ac1 = v2[0] - v0[0];
-        double ac2 = v2[1] - v0[1];
-        double ac3 = v2[2] - v0[2];
-        double cross_P[3];
-        double vec_A[] = {ab1, ab2, ab3};
-        double vec_B[] = {ac1, ac2, ac3};
-        crossProduct(vec_A, vec_B, cross_P);
+        Eigen::Vector3d crossP = v1_to_v2.cross(v1_to_v3);
+        crossP.normalize();
         
-        nlist[i][0] = cross_P[0];
-        nlist[i][1] = cross_P[1];
-        nlist[i][2] = cross_P[2];
+        nlist[i][0] = crossP[0];
+        nlist[i][1] = crossP[1];
+        nlist[i][2] = crossP[2];
         
         
     }
 }
 
+void myObjType::calculateVertexNormals()
+{
+    // We suggest you to compute the normals here
+    for (int i=1; i <= vcount; i++) {
+        std::vector<int> adjacent_triangle_indices;
+        
+        for(int column=1;column<=3;++column)
+            for(int row=1;row<=tcount;++row)
+                if(tlist[row][column] == i)
+                    adjacent_triangle_indices.push_back(row);
+        
+        Eigen::Vector3d sumVector(0, 0, 0);
+        
+        for (auto const& j: adjacent_triangle_indices)
+        {
+            sumVector[0] += nlist[j][0];
+            sumVector[1] += nlist[j][1];
+            sumVector[2] += nlist[j][2];
+        }
+        sumVector.normalize();
+        
+        vnlist[i][0] = sumVector[0];
+        vnlist[i][1] = sumVector[1];
+        vnlist[i][2] = sumVector[2];
+    }
+}
 
 
 int myObjType::enext(int orTri)
@@ -280,22 +299,6 @@ int myObjType::dest(int orTri)
 
 // PRIVATE MEMBERS
 
-void myObjType::crossProduct(double vect_A[], double vect_B[], double cross_P[])
-
-{
-    cross_P[0] = vect_A[1] * vect_B[2] - vect_A[2] * vect_B[1];
-    cross_P[1] = vect_A[0] * vect_B[2] - vect_A[2] * vect_B[0];
-    cross_P[2] = vect_A[0] * vect_B[1] - vect_A[1] * vect_B[0];
-}
-
-double myObjType::dotProduct(double vect_A[], double vect_B[])
-{
-    int product = 0;
-    // Loop for calculate cot product
-    for (int i = 0; i < 3; i++)
-        product = product + vect_A[i] * vect_B[i];
-    return product;
-}
 
 void myObjType::computeStat()
 {
@@ -361,11 +364,6 @@ void myObjType::computeFNextList() {
         }
     } // Hashmap created
     
-    for(auto& elem : mymap)
-    {
-        std::cout << "{" << elem.first.first << ",  " << elem.first.second << "}: {" <<  elem.second.first << "," << elem.second.second << "}\n";
-    }
-    
     for (int i=1; i <= tcount; i++) {
         int o = tlist[i][0];
         int d = tlist[i][1];
@@ -389,10 +387,5 @@ void myObjType::computeFNextList() {
         opposite_faces = mymap[make_pair(o, d)];
         fnlist[i][2] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
     }
-    
-    
-}
 
-void myObjType::getVersionNumber() {
-    
 }

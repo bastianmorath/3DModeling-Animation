@@ -88,7 +88,7 @@ void display(void)
 		glRotatef(angle2, 1.0, 0.0, 0.0);
 		glRotatef(angle, 0.0, 1.0, 0.0);
 		glScalef(zoom, zoom, zoom);
-		myObj.draw();
+		myObj.draw(m_Smooth);
 	glPopMatrix();
 	glutSwapBuffers ();
 }

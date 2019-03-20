@@ -30,7 +30,7 @@
 /* Begin PBXFileReference section */
 		85FD9AA2223391C000E76B38 /* mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mesh.h; sourceTree = "<group>"; };
 		85FD9AA3223391C000E76B38 /* mesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mesh.cpp; sourceTree = "<group>"; };
-		AA5597AC16E82C74005259D5 /* CS3242 Lab 1 */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = "CS3242 Lab 1"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA5597AC16E82C74005259D5 /* CS3242 Lab 1 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "CS3242 Lab 1"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA5597B016E82C74005259D5 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		AA5597B216E82C74005259D5 /* Lab3.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Lab3.1; sourceTree = "<group>"; };
 		AA5597B916E82CDE005259D5 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -230,6 +230,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include/eigen3/;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-I",
+					/usr/local/Cellar/eigen/3.3.7/include/eigen3,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -238,6 +244,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include/eigen3/;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-I",
+					/usr/local/Cellar/eigen/3.3.7/include/eigen3,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

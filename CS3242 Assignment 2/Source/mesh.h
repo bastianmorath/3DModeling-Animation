@@ -3,7 +3,7 @@
 // maximum number of vertices and triangles
 #define MAXV 1000000
 #define MAXT 1000000
-
+#include <Eigen/Dense>
 
 class myObjType {
 	int vcount = 0;
@@ -11,7 +11,8 @@ class myObjType {
 	double vlist[MAXV][3];   // vertices list
 	int tlist[MAXT][3];      // triangle list
 	int fnlist[MAXT][3];     // fnext list 
-	double nlist[MAXT][3];   // storing triangle normals
+    double vnlist[MAXV][3];     // storing vertex normals
+    double nlist[MAXT][3];   // storing triangle normals
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
 
@@ -19,18 +20,18 @@ class myObjType {
 	int statMaxAngle[18];
     
 private:
-    double dotProduct(double vect_A[], double vect_B[]);
-    double calculateAngle(double *a, double *b);
-    void crossProduct(double vect_A[], double vect_B[], double cross_P[]);
+    double calculateAngle(Eigen::Vector3d v1, Eigen::Vector3d v2);
     void computeFNextList();
     
 public:
 	myObjType() { vcount = 0; tcount = 0; };
 	void readFile(char* filename);  // assumming file contains a manifold
 	void writeFile(char* filename);  
-	void draw();  
+	void draw(bool smooth);
     void computeStat();
-    void calculateNormals();
+    void calculateFaceNormals();
+    void calculateVertexNormals();
+
     void calculateAngleStatistics();
     void getVersionNumber();
     int enext(int orTri);
