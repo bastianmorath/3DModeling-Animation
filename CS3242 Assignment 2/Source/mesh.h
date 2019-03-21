@@ -32,9 +32,10 @@ public:
     void computeStat();
     void calculateFaceNormals();
     void calculateVertexNormals();
-    
+    std::vector<int> mergeUnique(std::vector<int> vector1, std::vector<int> vector2);
+
     void calculateAngleStatistics();
-    int getNumberOfComponents();
+    void computeNumberOfComponents();
     int enext(int orTri);
     int sym(int orTri);
     int org(int orTri);
