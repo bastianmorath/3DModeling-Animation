@@ -304,9 +304,6 @@ void myObjType::computeStat()
 
     }
     
-   
-    
-    
     cout << "Statistics for Maximum Angles" << endl;
     for (int i = 0; i < 18; i++)
         cout << statMaxAngle[i] << " ";
@@ -401,105 +398,41 @@ void myObjType::computeFNextList() {
 void myObjType::computeNumberOfComponents() {
     std::cout << "Computing number of components..." << std::endl;
     
-    std::vector<set<int>> neighboring_ids; // Each triagnle has a vector wioth all the triangles visited
-    for (int i=1; i <= tcount; i++) {
-        std::set<int> new_set = {i};
-        neighboring_ids.push_back(new_set);
-    }
-    // We bacially need to do it as many times as the biggest distance between any two triangles is
-    // SO for an approximation and to speed things up, I use the logarithm of total number of triangles
-    for (int i=0; i < log(tcount); i++) {
-        for (int j=0; j < tcount; j++) {
-            for (int version=0; version <3; version++) {
-                int orTri_neighbor = fnlist[j+1][version];
-                if (orTri_neighbor != 0) { // If no edge vertex
-                    int neighbor_index = orTri_neighbor >> 3;
-                    set<int> set = neighboring_ids[neighbor_index-1];
-                    neighboring_ids[i].insert(set.begin(), set.end());
-                } 
-            }
-        }
+    std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
+    set<int> seenIndices;
+
+    while (seenIndices.size() < tcount) {
+        set<int> s;
+        v.push_back(s);
+        int notSeenIndex = getIndexNotYetSeen(seenIndices);
+        findNeighbors(v, seenIndices, notSeenIndex);
     }
     
-    std::vector<set<int>> component_ids; // We store all ids of a component in a separate vector
-    for (int i=0; i < neighboring_ids.size(); i++) {
-        pair<bool, int> intersection(false, 0);
-        for (int j=0; j < component_ids.size(); j++) {
-            std::set<int> component_ids_set = neighboring_ids[i];
-            std::set<int> id_vec = component_ids[j];
-            
-            
-            std::vector<int> v3;
-            std::set_intersection(component_ids_set.begin(),component_ids_set.end(),
-                                  id_vec.begin(),id_vec.end(),
-                                  back_inserter(v3));
-            if (v3.size() > 0) {
-                intersection = make_pair(true, j);
-                break;
-            }
-        }
-        
-        if (intersection.first) {
-            std::set<int> toBeInserted = neighboring_ids[i];
-            component_ids[intersection.second].insert(toBeInserted.begin(), toBeInserted.end());
-        } else {
-            component_ids.push_back(neighboring_ids[i]);
-        }
-    }
-
-    std::cout << "Number of Components: " <<  component_ids.size() << std::endl;
+    std::cout << "Number of Components: " << v.size() << std::endl;
 }
-
-/*
-int myObjType::getNumberOfComponents() {
-    std::vector<int> triangle_ids;
-    for (int i=1; i <= tcount; i++) {
-        triangle_ids.push_back(i);
-    }
-
-    
-    // Do with version 0
-    std::vector<int> previousIndices = {1};
-    for (int i=1; i <= tcount; i++) {
-        changeNeighbors(previousIndices, 1, triangle_ids);
-    }
-        
-    return distance(triangle_ids.begin(),unique(triangle_ids.begin(), triangle_ids.end()));
-
-    
-    return 0;
-}
- */
-/*
- Idea: Recursively change the ids of the three neighboring triangles to the current id.
- 
- IDEA 2: Each triangle has a list of indices. We update each triangle at the same time to include ids of neighboring triangle (i.e. two nested for loops). at the end, all the triangles that have any idshared are in the same component. 
- */
-void myObjType::changeNeighbors(std::vector<int> previous_indices, int currentIndex, std::vector<int> triangle_ids) {
+void myObjType::findNeighbors(std::vector<set<int>> &v, set<int> &seenIndices, int index) {
+    int numComponents = v.size();
+    seenIndices.insert(index);
+    v[numComponents-1].insert(index);
     for (int version=0; version <3; version++) {
-        int orTri_neighbor = fnlist[currentIndex][version];
-        int neighbor_index = orTri_neighbor >> 3;
-        // If we have not looked at this triagnle before in this current run
-       
-
-        if (std::find(std::begin(previous_indices), std::end(previous_indices), neighbor_index) == std::end(previous_indices)) {
-            //for (auto i = triangle_ids.begin(); i != triangle_ids.end(); ++i)
-                // std::cout << *i << ' ';
-            // std::cout << std::endl;
-            triangle_ids[neighbor_index] = triangle_ids[currentIndex]; // Change the fnext ids to this id
-            previous_indices.push_back(neighbor_index);
-            changeNeighbors(previous_indices, neighbor_index, triangle_ids);
+        int orTri_neighbor = fnlist[index][version];
+        if (orTri_neighbor != 0) { // If no edge vertex
+            int neighbor_index = orTri_neighbor >> 3;
+            if (v[numComponents-1].find(neighbor_index) == v[numComponents-1].end()) { // Element not yet seen
+                findNeighbors(v, seenIndices, neighbor_index);
+                
+            }
         }
     }
+    
 }
 
-
-std::vector<int> myObjType::mergeUnique(std::vector<int> vector1, std::vector<int> vector2) {
-    std::vector<int> merge;
-    merge.reserve( vector1.size() + vector2.size() ); // preallocate memory
-    merge.insert( merge.end(), vector1.begin(), vector1.end() );
-    merge.insert( merge.end(), vector2.begin(), vector2.end() );
-    sort( merge.begin(), merge.end() );
-    merge.erase( unique( merge.begin(), merge.end() ), merge.end() );
-    return merge;
+// return -1 if all elements hve been seen before
+int myObjType::getIndexNotYetSeen(set<int> v) {
+    for (int i=1; i<= tcount; i++){
+        if (v.find(i) == v.end()){
+            return i;
+        }
+    }
+    return -1;
 }

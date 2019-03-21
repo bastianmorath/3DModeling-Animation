@@ -4,6 +4,7 @@
 #define MAXV 1000000
 #define MAXT 1000000
 #include <Eigen/Dense>
+#include <set>
 
 class myObjType {
 	int vcount = 0;
@@ -40,6 +41,9 @@ public:
     int sym(int orTri);
     int org(int orTri);
     int dest(int orTri);
+    
+    int getIndexNotYetSeen(std::set<int> v);
+    void findNeighbors(std::vector<std::set<int>> &v, std::set<int> &seenIndices, int index);
 
 
 };
