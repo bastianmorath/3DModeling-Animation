@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <vector>
 #include <Eigen/Dense>
-
+#include <array>
 using namespace std;
 
 
@@ -46,7 +46,6 @@ void myObjType::draw(bool smooth) {
         // uncomment the following after you computed the normals
         if (smooth) {
             glBegin(GL_POLYGON);
-
             for (int j = 0; j < 3; j++){
                 glNormal3dv(vnlist[tlist[i][j]]);
                 glVertex3dv(vlist[tlist[i][j]]);
@@ -54,7 +53,6 @@ void myObjType::draw(bool smooth) {
             glEnd();
         } else {
             glBegin(GL_POLYGON);
-
             glNormal3dv(nlist[i]);
             for (int j = 0; j < 3; j++)
                 glVertex3dv(vlist[tlist[i][j]]);
@@ -148,11 +146,11 @@ void myObjType::readFile(char* filename)
 	}
     calculateFaceNormals();
     calculateVertexNormals();
-    calculateAngleStatistics();
     computeFNextList();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
     computeStat();
+    std::cout << "Number of Components: " << getNumberOfComponents() << std::endl;
 }
 
 
@@ -164,31 +162,6 @@ double myObjType::calculateAngle(Eigen::Vector3d v1, Eigen::Vector3d v2){
     return acos(dot / v1.norm() / v2.norm()) *180 / M_PI;
 }
 
-void myObjType::calculateAngleStatistics()
-{
-    for (int i=1; i <= tcount; i++) {
-        Eigen::Vector3d  v1(vlist[tlist[i][0]]);
-        Eigen::Vector3d  v2(vlist[tlist[i][1]]);
-        Eigen::Vector3d  v3(vlist[tlist[i][2]]);
-
-        Eigen::Vector3d  v1_to_v2(v2 - v1);
-        Eigen::Vector3d  v1_to_v3(v3 - v1);
-        Eigen::Vector3d  v2_to_v3(v3 - v1);
-
-        
-        double angle1 = calculateAngle(v1_to_v2, v1_to_v3);
-        
-        double angle2 = calculateAngle(-v1_to_v2, v2_to_v3);
-        double angle3 = 180 - angle2 - angle1;
-
-        int minAngle = floor(std::min(std::min(angle1, angle2), angle3) / 10);
-        int maxAngle = floor(std::max(std::max(angle1, angle2), angle3) / 10);
-        
-        statMinAngle[minAngle] += 1;
-        statMaxAngle[maxAngle] += 1;
-
-    }
-}
 
 void myObjType::calculateFaceNormals()
 {
@@ -207,8 +180,6 @@ void myObjType::calculateFaceNormals()
         nlist[i][0] = crossP[0];
         nlist[i][1] = crossP[1];
         nlist[i][2] = crossP[2];
-        
-        
     }
 }
 
@@ -242,7 +213,9 @@ void myObjType::calculateVertexNormals()
 
 int myObjType::enext(int orTri)
 {
-    int version = orTri & 0x0000111b;
+    int version = orTri & ((1 << 2) - 1);
+    // std::cout << version << std::endl;
+
     int triangleIndex = orTri >> 3;
     
     std::map<int, int> my_map = {
@@ -259,7 +232,7 @@ int myObjType::enext(int orTri)
 
 int myObjType::sym(int orTri)
 {
-    int version = orTri & 0x0000111b;
+    int version = orTri & ((1 << 2) - 1);
     int triangleIndex = orTri >> 3;
     
     std::map<int, int> my_map = {
@@ -276,7 +249,7 @@ int myObjType::sym(int orTri)
 
 int myObjType::org(int orTri)
 {
-    int version = orTri & 0x0000111b;
+    int version = orTri & ((1 << 2) - 1);
     int triangleIndex = orTri >> 3;
     
     std::map<int, int> my_map = {
@@ -302,22 +275,48 @@ int myObjType::dest(int orTri)
 
 void myObjType::computeStat()
 {
-    int i;
     double minAngle = 0;
     double maxAngle = 0;
     
+    for (int i=1; i <= tcount; i++) {
+        Eigen::Vector3d  v1(vlist[tlist[i][0]]);
+        Eigen::Vector3d  v2(vlist[tlist[i][1]]);
+        Eigen::Vector3d  v3(vlist[tlist[i][2]]);
+        
+        Eigen::Vector3d  v1_to_v2(v2 - v1);
+        Eigen::Vector3d  v1_to_v3(v3 - v1);
+        Eigen::Vector3d  v2_to_v3(v3 - v2);
+        
+        double angle1 = calculateAngle(v1_to_v2, v1_to_v3);
+        
+        double angle2 = calculateAngle(-v1_to_v2, v2_to_v3);
+        double angle3 = 180.0 - angle2 - angle1;
+        
+        double min = std::min(std::min(angle1, angle2), angle3);
+        double max = std::max(std::max(angle1, angle2), angle3);
+        
+        statMinAngle[int(floor(min / 10))] += 1;
+        statMaxAngle[int(floor(max / 10))] += 1;
+        
+        minAngle = minAngle < min ? minAngle : min;
+        maxAngle = maxAngle > max ? maxAngle : max;
+
+    }
     
-    cout << "Min. angle = " << minAngle << endl;
-    cout << "Max. angle = " << maxAngle << endl;
+   
+    
     
     cout << "Statistics for Maximum Angles" << endl;
-    for (i = 0; i < 18; i++)
+    for (int i = 0; i < 18; i++)
         cout << statMaxAngle[i] << " ";
     cout << endl;
     cout << "Statistics for Minimum Angles" << endl;
-    for (i = 0; i < 18; i++)
+    for (int i = 0; i < 18; i++)
         cout << statMinAngle[i] << " ";
     cout << endl;
+    
+    cout << "Min. angle = " << minAngle << endl;
+    cout << "Max. angle = " << maxAngle << endl;
 }
 
 void myObjType::computeFNextList() {
@@ -335,9 +334,9 @@ void myObjType::computeFNextList() {
         int v1 = v_vec[1];
         int v2 = v_vec[2];
 
-        int f0 =  i >> 3 | distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][0]));
-        int f1 =  i >> 3 | distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][1]));
-        int f2 =  i >> 3 | distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][2]));
+        int f0 =  i << 3 | int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][0])));
+        int f1 =  i << 3 | int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][1])));
+        int f2 =  i << 3 | int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][2])));
         
         // f0
         std::pair<int, int> key0 = make_pair(v0, v1);
@@ -363,29 +362,75 @@ void myObjType::computeFNextList() {
             mymap.insert(make_pair(key2, make_pair(f2, 0))); //store new face, leave the other blank, i.e. 0
         }
     } // Hashmap created
-    
+    for(auto& elem : mymap)
+    {
+        std::cout << "{" << elem.first.first << ",  " << elem.first.second << "}: {" <<  (elem.second.first >> 3) << "," << (elem.second.second >> 3) << "}\n";
+    }
+     
     for (int i=1; i <= tcount; i++) {
-        int o = tlist[i][0];
-        int d = tlist[i][1];
-        
-        int current_face =  i >> 3 | 0;
+        int o = min(tlist[i][0], tlist[i][1]) ;
+        int d = max(tlist[i][0], tlist[i][1]) ;
+        // std::cout << "Org.: " << tlist[i][0] << ", Dest: " <<  tlist[i][1] << "\n";
+
+         // int current_face =  i << 3 | 0;
       
         std::pair<int, int> opposite_faces = mymap[make_pair(o, d)];
-        fnlist[i][0] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+        //std::cout << "{TrObj: " << (current_face) << ", index:  " << (current_face >>3) << ", version: " << (current_face & ((1 << 2) - 1)
+        // )  << ". Opposite: " << (opposite_faces.first) << std::endl;
+        fnlist[i][0] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
         
-        o = tlist[i][1];
-        d = tlist[i][2];
+        o = min(tlist[i][1], tlist[i][2]);
+        d = max(tlist[i][1], tlist[i][2]);
         
-        current_face =  i >> 3 | 1;
         opposite_faces = mymap[make_pair(o, d)];
-        fnlist[i][1] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+
+        fnlist[i][1] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
        
-        o = tlist[i][2];
-        d = tlist[i][0];
+        o = min(tlist[i][0], tlist[i][2]);
+        d = max(tlist[i][0], tlist[i][2]);
         
-        current_face =  i >> 3 | 2;
         opposite_faces = mymap[make_pair(o, d)];
-        fnlist[i][2] = current_face = opposite_faces.first ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+        fnlist[i][2] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+    }
+    
+}
+
+int myObjType::getNumberOfComponents() {
+    std::vector<int> triangle_ids;
+    for (int i=1; i <= tcount; i++) {
+        triangle_ids.push_back(i);
     }
 
+    
+    // Do with version 0
+    std::vector<int> previousIndices = {1};
+    for (int i=1; i <= tcount; i++) {
+        changeNeighbors(previousIndices, 1, triangle_ids);
+    }
+        
+    return distance(triangle_ids.begin(),unique(triangle_ids.begin(), triangle_ids.end()));
+
+    
+    return 0;
+}
+/*
+ Idea: Recursively change the ids of the three neighboring triangles to the current id.
+ 
+ */
+void myObjType::changeNeighbors(std::vector<int> previous_indices, int currentIndex, std::vector<int> triangle_ids) {
+    for (int version=0; version <3; version++) {
+        int orTri_neighbor = fnlist[currentIndex][version];
+        int neighbor_index = orTri_neighbor >> 3;
+        // If we have not looked at this triagnle before in this current run
+       
+
+        if (std::find(std::begin(previous_indices), std::end(previous_indices), neighbor_index) == std::end(previous_indices)) {
+            for (auto i = previous_indices.begin(); i != previous_indices.end(); ++i)
+                std::cout << *i << ' ';
+            std::cout << std::endl;
+            triangle_ids[neighbor_index] = triangle_ids[currentIndex]; // Change the fnext ids to this id
+            previous_indices.push_back(neighbor_index);
+            changeNeighbors(previous_indices, neighbor_index, triangle_ids);
+        }
+    }
 }
