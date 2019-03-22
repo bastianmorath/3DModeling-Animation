@@ -30,7 +30,7 @@ using namespace std;
 
 
 
-void myObjType::draw(bool smooth) {
+void myObjType::draw(bool smooth, bool edges) {
 
 	glEnable(GL_LIGHTING);
 
@@ -43,32 +43,25 @@ void myObjType::draw(bool smooth) {
 			longestSide = (lmax[i] - lmin[i]);
 	glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
 	glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
-    std::set<int> edge_vertices = getEdgeVertices();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
-	for (int i = 1; i <= tcount; i++)
-	{
+    for (int i = 1; i <= tcount; i++)
+    {
         // uncomment the following after you computed the normals
-        if (smooth) {
-            glBegin(GL_POLYGON);
-            for (int j = 0; j < 3; j++){
-                if (edge_vertices.find(i*3 + j) != edge_vertices.end()) { // Edge
-                        glEdgeFlag(GL_TRUE);
-                } else {
-                        glEdgeFlag(GL_FALSE);
-                }
-                glNormal3dv(vnlist[tlist[i][j]]);
-                glVertex3dv(vlist[tlist[i][j]]);
-            }
-            glEnd();
-        } else {
-            glBegin(GL_POLYGON);
+        if (!smooth) {
             glNormal3dv(nlist[i]);
-            for (int j = 0; j < 3; j++)
-                glVertex3dv(vlist[tlist[i][j]]);
-            glEnd();
         }
-	}
+        glBegin(GL_POLYGON);
+        for (int j = 0; j < 3; j++){
+            if (smooth) {
+                glNormal3dv(vnlist[tlist[i][j]]);
+            }
+            glVertex3dv(vlist[tlist[i][j]]);
+        }
+        glEnd();
+    }
+    
+    // drawEdges(smooth);
+
 	glDisable(GL_LIGHTING);
     glutPostRedisplay(); // So that image is not black at the beginning
 
@@ -369,6 +362,8 @@ void myObjType::computeFNextList() {
             std::set<int> opposite_faces = mymap[key];
             int face0 = *std::next(opposite_faces.begin(), 0);
             int face1 = *std::next(opposite_faces.begin(), 1);
+            // If face1 index is not <=tcount, then this is not a face, but an edge face!
+            face1 = (face1 >> 3) <= tcount ? face1 : 0;
             
             fnlist[i][version] = i == (face0 >> 3) ? face1 : face0; // Opposite face is the one that is not the current_face
         }
@@ -505,30 +500,39 @@ pair<int, int> myObjType::getVerticesForVersion(int triangleIndex, int version) 
     return make_pair(v0, v1);
 }
 
-std::set<int> myObjType::getEdgeVertices() {
-    for (int version=0; version <3; version++) { // Check each neighbor
-        int orTri_neighbor = fnlist[index][version];
-        int neighbor_index = orTri_neighbor >> 3;
-        if (orTri_neighbor != 0) { // If no edge vertex
-            
-            int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
-            bool hasConflict = conflict(index, version, neighbor_index, neighbor_version);
-            if (currentComponentIds.find(neighbor_index) != currentComponentIds.end()) { // Element already seen
-                if (hasConflict) {
-                    return false;
-                }
-            } else {
-                if (hasConflict) {
-                    // Element not yet seen but conflict -> Orient it
-                    int oldValue = tlist[neighbor_index][1];
-                    tlist[neighbor_index][1] = tlist[neighbor_index][2];
-                    tlist[neighbor_index][2] = oldValue;
-                }
-                currentComponentIds.insert(neighbor_index);
-                seenIndices.insert(neighbor_index);
-                
-                checkOrientationIndex(neighbor_index, currentComponentIds, seenIndices);
+void myObjType::drawEdges(bool smooth) {
+    std::set<int> edgeVerticesSet;
+    for (int i=1; i <= tcount; i++) {
+        // Check each triangle
+        for (int version=0; version <3; version++) {
+            int orTri_neighbor = fnlist[i][version];
+            if (orTri_neighbor == 0) { // Edge vertices!
+                pair<int, int> edgeVertices = getVerticesForVersion(i, version);
+                edgeVerticesSet.insert(edgeVertices.first);
+                edgeVerticesSet.insert(edgeVertices.second);
             }
         }
+    }
+    
+    for (int i = 1; i <= tcount; i++)
+    {
+        if (!smooth) {
+            glNormal3dv(nlist[i]);
+        }
+        glBegin(GL_POLYGON);
+
+        for (int j = 0; j < 3; j++){
+            if (edgeVerticesSet.find(i*3 + j) != edgeVerticesSet.end()) { // Edge
+                glEdgeFlag(GL_TRUE);
+                glColor3f(1.0f, 0.2f, 0.0f); // make this vertex red
+                if (smooth) {
+                    glNormal3dv(vnlist[tlist[i][j]]);
+                }
+                glVertex3dv(vlist[tlist[i][j]]);
+            }
+        }
+        glEnd();
+        glEdgeFlag(GL_FALSE);
+
     }
 }

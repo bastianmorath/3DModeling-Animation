@@ -28,6 +28,7 @@ myObjType myObj;
 // global variable
 
 bool m_Smooth = FALSE;
+bool m_Edges = FALSE;
 bool m_Highlight = FALSE;
 GLfloat angle = 0;   /* in degrees */
 GLfloat angle2 = 0;   /* in degrees */
@@ -88,7 +89,7 @@ void display(void)
 		glRotatef(angle2, 1.0, 0.0, 0.0);
 		glRotatef(angle, 0.0, 1.0, 0.0);
 		glScalef(zoom, zoom, zoom);
-		myObj.draw(m_Smooth);
+		myObj.draw(m_Smooth, m_Edges);
 	glPopMatrix();
 	glutSwapBuffers ();
 }

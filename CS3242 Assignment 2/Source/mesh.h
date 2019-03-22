@@ -11,7 +11,7 @@ class myObjType {
 	int tcount = 0;
 	double vlist[MAXV][3];   // vertices list
 	int tlist[MAXT][3];      // triangle list
-	int fnlist[MAXT][3];     // fnext list 
+	int fnlist[MAXT][3];     // fnext list . Stores 0 if edge has no adjacent faces
     double vnlist[MAXV][3];     // storing vertex normals
     double nlist[MAXT][3];   // storing triangle normals
 	double lmax[3];          // the maximum coordinates of x,y,z
@@ -30,7 +30,7 @@ public:
 	myObjType() { vcount = 0; tcount = 0; };
 	void readFile(char* filename);  // assumming file contains a manifold
 	void writeFile(char* filename);  
-	void draw(bool smooth);
+	void draw(bool smooth, bool edges);
     void computeStat();
     void calculateFaceNormals();
     void calculateVertexNormals();
@@ -49,7 +49,7 @@ public:
     bool checkOrientationIndex(int index, std::set<int> &currentComponentIds, std::set<int> &seenIndices);
     std::pair<int, int> getVerticesForVersion(int triangleIndex, int version);
     bool conflict(int t1Index, int t1Version, int t2Index, int t2Version);
-    std::set<int> getEdgeVertices();
+    void drawEdges(bool smooth);
 
 };
 
