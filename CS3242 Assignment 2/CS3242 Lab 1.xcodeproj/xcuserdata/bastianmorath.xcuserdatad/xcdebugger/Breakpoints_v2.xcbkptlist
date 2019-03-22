@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.98674"
+            timestampString = "574862018.284179"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "401"
-            endingLineNumber = "401"
+            startingLineNumber = "416"
+            endingLineNumber = "416"
             landmarkName = "myObjType::computeNumberOfComponents()"
             landmarkType = "7">
          </BreakpointContent>
@@ -26,11 +26,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.987458"
+            timestampString = "574862018.284753"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "371"
-            endingLineNumber = "371"
+            startingLineNumber = "381"
+            endingLineNumber = "381"
             landmarkName = "myObjType::computeFNextList()"
             landmarkType = "7">
          </BreakpointContent>
@@ -42,11 +42,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.9879301"
+            timestampString = "574862018.2851681"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "394"
-            endingLineNumber = "394"
+            startingLineNumber = "409"
+            endingLineNumber = "409"
             landmarkName = "myObjType::computeFNextList()"
             landmarkType = "7">
             <Locations>
@@ -90,11 +90,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.988397"
+            timestampString = "574862018.285766"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "418"
-            endingLineNumber = "418"
+            startingLineNumber = "433"
+            endingLineNumber = "433"
             landmarkName = "myObjType::findNeighbors(std::vector&lt;set&lt;int&gt;&gt; &amp;v, set&lt;int&gt; &amp;seenIndices, int index)"
             landmarkType = "7">
          </BreakpointContent>
@@ -106,11 +106,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.988795"
+            timestampString = "574862018.286221"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "408"
-            endingLineNumber = "408"
+            startingLineNumber = "423"
+            endingLineNumber = "423"
             landmarkName = "myObjType::computeNumberOfComponents()"
             landmarkType = "7">
          </BreakpointContent>
@@ -122,11 +122,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.989175"
+            timestampString = "574862018.286644"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "417"
-            endingLineNumber = "417"
+            startingLineNumber = "432"
+            endingLineNumber = "432"
             landmarkName = "myObjType::findNeighbors(std::vector&lt;set&lt;int&gt;&gt; &amp;v, set&lt;int&gt; &amp;seenIndices, int index)"
             landmarkType = "7">
          </BreakpointContent>
@@ -138,11 +138,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.989532"
+            timestampString = "574862018.2869771"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "421"
-            endingLineNumber = "421"
+            startingLineNumber = "436"
+            endingLineNumber = "436"
             landmarkName = "myObjType::findNeighbors(std::vector&lt;set&lt;int&gt;&gt; &amp;v, set&lt;int&gt; &amp;seenIndices, int index)"
             landmarkType = "7">
          </BreakpointContent>
@@ -154,11 +154,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.989911"
+            timestampString = "574862018.287335"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "419"
-            endingLineNumber = "419"
+            startingLineNumber = "434"
+            endingLineNumber = "434"
             landmarkName = "myObjType::findNeighbors(std::vector&lt;set&lt;int&gt;&gt; &amp;v, set&lt;int&gt; &amp;seenIndices, int index)"
             landmarkType = "7">
          </BreakpointContent>
@@ -170,12 +170,108 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Source/mesh.cpp"
-            timestampString = "574851046.9902591"
+            timestampString = "574862018.287639"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "422"
-            endingLineNumber = "422"
+            startingLineNumber = "437"
+            endingLineNumber = "437"
             landmarkName = "myObjType::findNeighbors(std::vector&lt;set&lt;int&gt;&gt; &amp;v, set&lt;int&gt; &amp;seenIndices, int index)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Source/main.cpp"
+            timestampString = "574862018.287946"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "221"
+            endingLineNumber = "221"
+            landmarkName = "main(int argc, char **argv)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Source/mesh.cpp"
+            timestampString = "574862018.287999"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "538"
+            endingLineNumber = "538"
+            landmarkName = "myObjType::orientTriangles()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Source/mesh.cpp"
+            timestampString = "574862018.288274"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "534"
+            endingLineNumber = "534"
+            landmarkName = "myObjType::orientTriangles()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Source/mesh.cpp"
+            timestampString = "574862018.28855"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "463"
+            endingLineNumber = "463"
+            landmarkName = "myObjType::orientTriangles()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Source/mesh.cpp"
+            timestampString = "574862018.288864"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "522"
+            endingLineNumber = "522"
+            landmarkName = "myObjType::orientTriangles()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Source/mesh.cpp"
+            timestampString = "574862018.289227"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "517"
+            endingLineNumber = "517"
+            landmarkName = "myObjType::orientTriangles()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

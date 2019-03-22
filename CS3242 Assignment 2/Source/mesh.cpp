@@ -25,6 +25,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <set>
+
 using namespace std;
 
 
@@ -61,6 +62,7 @@ void myObjType::draw(bool smooth) {
         }
 	}
 	glDisable(GL_LIGHTING);
+    glutPostRedisplay(); // So that image is not black at the beginning
 
 	glPopMatrix();
 }
@@ -152,6 +154,7 @@ void myObjType::readFile(char* filename)
     cout << "No. of triangles: " << tcount << endl;
     computeStat();
     computeNumberOfComponents();
+    orientTriangles();
 }
 
 
@@ -332,9 +335,16 @@ void myObjType::computeFNextList() {
         int v1 = v_vec[1];
         int v2 = v_vec[2];
 
-        int f0 =  i << 3 | int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][0])));
-        int f1 =  i << 3 | int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][1])));
-        int f2 =  i << 3 | int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][2])));
+        // Somehow version is always one too big, so do it manually.. Ugly..
+        std::map<int, int> my_map = {
+            { 0, 2 },
+            { 1, 0 },
+            { 2, 1 },
+           
+        };
+        int f0 =  i << 3 | my_map[int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][0])))];
+        int f1 =  i << 3 | my_map[int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][1])))];
+        int f2 =  i << 3 | my_map[int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][2])))];
         
         // f0
         std::pair<int, int> key0 = make_pair(v0, v1);
@@ -390,6 +400,11 @@ void myObjType::computeFNextList() {
         
         opposite_faces = mymap[make_pair(o, d)];
         fnlist[i][2] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
+        
+        std::cout << (fnlist[i][0] >> 3) << ", " << (fnlist[i][0] & ((1 << 2) - 1))
+        << " | " <<(fnlist[i][1] >> 3) << ", " << (fnlist[i][1] & ((1 << 2) - 1))
+        << " | " << (fnlist[i][2] >> 3) << ", " << (fnlist[i][2] &  ((1 << 2) - 1)) << std::endl;
+        
     }
     
 }
@@ -411,7 +426,7 @@ void myObjType::computeNumberOfComponents() {
     std::cout << "Number of Components: " << v.size() << std::endl;
 }
 void myObjType::findNeighbors(std::vector<set<int>> &v, set<int> &seenIndices, int index) {
-    int numComponents = v.size();
+    int numComponents = int(v.size());
     seenIndices.insert(index);
     v[numComponents-1].insert(index);
     for (int version=0; version <3; version++) {
@@ -420,14 +435,13 @@ void myObjType::findNeighbors(std::vector<set<int>> &v, set<int> &seenIndices, i
             int neighbor_index = orTri_neighbor >> 3;
             if (v[numComponents-1].find(neighbor_index) == v[numComponents-1].end()) { // Element not yet seen
                 findNeighbors(v, seenIndices, neighbor_index);
-                
             }
         }
     }
     
 }
 
-// return -1 if all elements hve been seen before
+// return -1 if all elements hve been seen beforew
 int myObjType::getIndexNotYetSeen(set<int> v) {
     for (int i=1; i<= tcount; i++){
         if (v.find(i) == v.end()){
@@ -436,3 +450,122 @@ int myObjType::getIndexNotYetSeen(set<int> v) {
     }
     return -1;
 }
+
+
+bool myObjType::orientTriangles() {
+    std::map<int, vector<bool>> dict; // bundles the triangle ids together that are in the same component
+    std::vector<bool> v = {true, true, true};
+    for (int i= 1; i <= tcount; ++i) {
+        
+        dict.insert(std::pair<int,vector<bool>>(i,v));
+    }
+    std::cout << "Orienting Triangles..." << std::endl;
+    for (int i=1; i <= tcount; i++) {
+      // Check each triangle
+        for (int version=0; version <3; version++) {
+            int orTri_neighbor = fnlist[i][version];
+            if (orTri_neighbor != 0) { // If no edge vertex
+                int neighbor_index = orTri_neighbor >> 3;
+                int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
+
+                int v0, v1;
+                //if (neighbor_version == 0) {
+                    v0 = tlist[neighbor_index][0];
+                    v1 = tlist[neighbor_index][1];
+                    std::cout << v0 << ", " << v1 << std::endl;
+
+                //} else if (neighbor_version == 1){
+                    v0 = tlist[neighbor_index][1];
+                    v1 = tlist[neighbor_index][2];
+                std::cout << v0 << ", " << v1 << std::endl;
+
+                // } else {
+                    v0 = tlist[neighbor_index][2];
+                    v1 = tlist[neighbor_index][0];
+                std::cout << v0 << ", " << v1 << std::endl;
+
+                //}
+                if (neighbor_version == 0) {
+                v0 = tlist[neighbor_index][0];
+                v1 = tlist[neighbor_index][1];
+                
+                } else if (neighbor_version == 1){
+                v0 = tlist[neighbor_index][1];
+                v1 = tlist[neighbor_index][2];
+                
+                } else {
+                v0 = tlist[neighbor_index][2];
+                v1 = tlist[neighbor_index][0];
+                
+                }
+                pair<int, int> vertex_indices_edge_of_neighbor = make_pair(v0, v1);
+                
+                if (version == 0) {
+                    v0 = tlist[i][0];
+                    v1 = tlist[i][1];
+                    
+                } else if (version == 1) {
+                    v0 = tlist[i][1];
+                    v1 = tlist[i][2];
+                } else {
+                    v0 = tlist[i][2];
+                    v1 = tlist[i][0];
+                }
+                pair<int, int> vertex_indices_edge_of_current = make_pair(v0, v1);
+                
+                vector<bool> v = dict[i];
+                if (vertex_indices_edge_of_current == vertex_indices_edge_of_neighbor) {
+                    v[version] = true;
+                } else {
+                    v[version] = false;
+                }
+                dict[i] = v;
+
+            } else {
+                vector<bool> v = dict[i];
+                v[version] = true;
+                dict[i] = v;
+            }
+        }
+    }
+   std::map<int, vector<bool>>::iterator it = dict.begin();
+    while(it != dict.end())
+    {
+        vector<bool> v = it->second;
+
+        if (v[0] == true && v[0] == v[1] && v[0]== v[2]) break;// all edges of triangle have right side -> Good!
+        else if (v[0] == false && v[0] == v[1] && v[0]== v[2]){ // all edges of triangle have worng side -> flip it
+            int oldValue = tlist[it->first][1];
+            tlist[it->first][1] = tlist[it->first][2];
+            tlist[it->first][2] = oldValue;
+
+        } else{
+            std::cout << "Failure in orienting triangles!" << std::endl; //  edges of triangle have different orientaitons -> Bad...
+            it++;
+
+            return false;
+        }
+        it++;
+
+    }
+    std::cout << "Successfully oriented triangles!" << std::endl;
+
+    return true;
+}
+/*
+void myObjType::checkOrientation(std::vector<set<int>> &v, set<int> &seenIndices, int index) {
+    int numComponents = int(v.size());
+    seenIndices.insert(index);
+    v[numComponents-1].insert(index);
+    for (int version=0; version <3; version++) {
+        int orTri_neighbor = fnlist[index][version];
+        if (orTri_neighbor != 0) { // If no edge vertex
+            int neighbor_index = orTri_neighbor >> 3;
+            if (v[numComponents-1].find(neighbor_index) == v[numComponents-1].end()) { // Element not yet seen
+                findNeighbors(v, seenIndices, neighbor_index);
+            }
+        }
+    }
+    
+}
+*/

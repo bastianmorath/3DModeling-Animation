@@ -44,6 +44,7 @@ public:
     
     int getIndexNotYetSeen(std::set<int> v);
     void findNeighbors(std::vector<std::set<int>> &v, std::set<int> &seenIndices, int index);
+    bool orientTriangles();
 
 
 };
