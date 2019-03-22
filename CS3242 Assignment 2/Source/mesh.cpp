@@ -43,12 +43,20 @@ void myObjType::draw(bool smooth) {
 			longestSide = (lmax[i] - lmin[i]);
 	glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
 	glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
+    std::set<int> edge_vertices = getEdgeVertices();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
 	for (int i = 1; i <= tcount; i++)
 	{
         // uncomment the following after you computed the normals
         if (smooth) {
             glBegin(GL_POLYGON);
             for (int j = 0; j < 3; j++){
+                if (edge_vertices.find(i*3 + j) != edge_vertices.end()) { // Edge
+                        glEdgeFlag(GL_TRUE);
+                } else {
+                        glEdgeFlag(GL_FALSE);
+                }
                 glNormal3dv(vnlist[tlist[i][j]]);
                 glVertex3dv(vlist[tlist[i][j]]);
             }
@@ -418,99 +426,109 @@ int myObjType::getIndexNotYetSeen(set<int> v) {
 
 
 bool myObjType::orientTriangles() {
-    std::map<int, vector<bool>> dict; // bundles the triangle ids together that are in the same component
-    std::vector<bool> v = {true, true, true};
-    for (int i= 1; i <= tcount; ++i) {
-        
-        dict.insert(std::pair<int,vector<bool>>(i,v));
-    }
     std::cout << "Orienting Triangles..." << std::endl;
-    for (int i=1; i <= tcount; i++) {
-      // Check each triangle
-        for (int version=0; version <3; version++) {
-            int orTri_neighbor = fnlist[i][version];
-            if (orTri_neighbor != 0) { // If no edge vertex
-                int neighbor_index = orTri_neighbor >> 3;
-                int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
 
-                int v0, v1;
-                //if (neighbor_version == 0) {
-                    v0 = tlist[neighbor_index][0];
-                    v1 = tlist[neighbor_index][1];
+    std::set<int> seenIndices;
 
-                //} else if (neighbor_version == 1){
-                    v0 = tlist[neighbor_index][1];
-                    v1 = tlist[neighbor_index][2];
-
-                // } else {
-                    v0 = tlist[neighbor_index][2];
-                    v1 = tlist[neighbor_index][0];
-
-                //}
-                if (neighbor_version == 0) {
-                v0 = tlist[neighbor_index][0];
-                v1 = tlist[neighbor_index][1];
-                
-                } else if (neighbor_version == 1){
-                v0 = tlist[neighbor_index][1];
-                v1 = tlist[neighbor_index][2];
-                
-                } else {
-                v0 = tlist[neighbor_index][2];
-                v1 = tlist[neighbor_index][0];
-                
-                }
-                pair<int, int> vertex_indices_edge_of_neighbor = make_pair(v0, v1);
-                
-                if (version == 0) {
-                    v0 = tlist[i][0];
-                    v1 = tlist[i][1];
-                    
-                } else if (version == 1) {
-                    v0 = tlist[i][1];
-                    v1 = tlist[i][2];
-                } else {
-                    v0 = tlist[i][2];
-                    v1 = tlist[i][0];
-                }
-                pair<int, int> vertex_indices_edge_of_current = make_pair(v0, v1);
-                
-                vector<bool> v = dict[i];
-                if (vertex_indices_edge_of_current == vertex_indices_edge_of_neighbor) {
-                    v[version] = true;
-                } else {
-                    v[version] = false;
-                }
-                dict[i] = v;
-
-            } else {
-                vector<bool> v = dict[i];
-                v[version] = true;
-                dict[i] = v;
-            }
-        }
-    }
-   std::map<int, vector<bool>>::iterator it = dict.begin();
-    while(it != dict.end())
-    {
-        vector<bool> v = it->second;
-
-        if (v[0] == true && v[0] == v[1] && v[0]== v[2]) break;// all edges of triangle have right side -> Good!
-        else if (v[0] == false && v[0] == v[1] && v[0]== v[2]){ // all edges of triangle have worng side -> flip it
-            int oldValue = tlist[it->first][1];
-            tlist[it->first][1] = tlist[it->first][2];
-            tlist[it->first][2] = oldValue;
-
-        } else{
-            std::cout << "Failure in orienting triangles!" << std::endl; //  edges of triangle have different orientaitons -> Bad...
-            it++;
-
+    bool success;
+    while (seenIndices.size() < tcount) {
+        int notSeenIndex = getIndexNotYetSeen(seenIndices);
+        std::set<int> currentComponentIds = {notSeenIndex};
+        seenIndices.insert(notSeenIndex);
+        success = checkOrientationIndex(notSeenIndex, currentComponentIds, seenIndices);
+        if (!success) {
+            std::cout << "Failure in orienting triangles!" << std::endl;
             return false;
         }
-        it++;
-
     }
+    computeFNextList();
+    calculateFaceNormals();
+    calculateVertexNormals();
+    
     std::cout << "Successfully oriented triangles!" << std::endl;
 
     return true;
+}
+    
+bool myObjType::checkOrientationIndex(int index, std::set<int> &currentComponentIds, std::set<int> &seenIndices) {
+    for (int version=0; version <3; version++) { // Check each neighbor
+        int orTri_neighbor = fnlist[index][version];
+        int neighbor_index = orTri_neighbor >> 3;
+        if (orTri_neighbor != 0) { // If no edge vertex
+           
+            int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
+            bool hasConflict = conflict(index, version, neighbor_index, neighbor_version);
+            if (currentComponentIds.find(neighbor_index) != currentComponentIds.end()) { // Element already seen
+                if (hasConflict) {
+                    return false;
+                }
+            } else {
+                if (hasConflict) {
+                    // Element not yet seen but conflict -> Orient it
+                    int oldValue = tlist[neighbor_index][1];
+                    tlist[neighbor_index][1] = tlist[neighbor_index][2];
+                    tlist[neighbor_index][2] = oldValue;
+                }
+                currentComponentIds.insert(neighbor_index);
+                seenIndices.insert(neighbor_index);
+
+                checkOrientationIndex(neighbor_index, currentComponentIds, seenIndices);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool myObjType::conflict(int t1Index, int t1Version, int t2Index, int t2Version) {
+    pair<int, int> t1Vertices = getVerticesForVersion(t1Index, t1Version);
+    pair<int, int> t2Vertices = getVerticesForVersion(t2Index, t2Version);
+    return t1Vertices == t2Vertices;
+}
+
+    
+pair<int, int> myObjType::getVerticesForVersion(int triangleIndex, int version) {
+    int v0, v1;
+    if (version == 0) {
+        v0 = tlist[triangleIndex][0];
+        v1 = tlist[triangleIndex][1];
+        
+    } else if (version == 1){
+        v0 = tlist[triangleIndex][1];
+        v1 = tlist[triangleIndex][2];
+        
+    } else {
+        v0 = tlist[triangleIndex][2];
+        v1 = tlist[triangleIndex][0];
+        
+    }
+    return make_pair(v0, v1);
+}
+
+std::set<int> myObjType::getEdgeVertices() {
+    for (int version=0; version <3; version++) { // Check each neighbor
+        int orTri_neighbor = fnlist[index][version];
+        int neighbor_index = orTri_neighbor >> 3;
+        if (orTri_neighbor != 0) { // If no edge vertex
+            
+            int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
+            bool hasConflict = conflict(index, version, neighbor_index, neighbor_version);
+            if (currentComponentIds.find(neighbor_index) != currentComponentIds.end()) { // Element already seen
+                if (hasConflict) {
+                    return false;
+                }
+            } else {
+                if (hasConflict) {
+                    // Element not yet seen but conflict -> Orient it
+                    int oldValue = tlist[neighbor_index][1];
+                    tlist[neighbor_index][1] = tlist[neighbor_index][2];
+                    tlist[neighbor_index][2] = oldValue;
+                }
+                currentComponentIds.insert(neighbor_index);
+                seenIndices.insert(neighbor_index);
+                
+                checkOrientationIndex(neighbor_index, currentComponentIds, seenIndices);
+            }
+        }
+    }
 }

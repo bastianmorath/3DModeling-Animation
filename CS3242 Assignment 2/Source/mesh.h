@@ -46,7 +46,10 @@ public:
     int getIndexNotYetSeen(std::set<int> v);
     void findNeighbors(std::vector<std::set<int>> &v, std::set<int> &seenIndices, int index);
     bool orientTriangles();
-
+    bool checkOrientationIndex(int index, std::set<int> &currentComponentIds, std::set<int> &seenIndices);
+    std::pair<int, int> getVerticesForVersion(int triangleIndex, int version);
+    bool conflict(int t1Index, int t1Version, int t2Index, int t2Version);
+    std::set<int> getEdgeVertices();
 
 };
 
