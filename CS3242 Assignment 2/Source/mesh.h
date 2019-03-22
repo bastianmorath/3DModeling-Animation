@@ -22,10 +22,11 @@ class myObjType {
     
 private:
     double calculateAngle(Eigen::Vector3d v1, Eigen::Vector3d v2);
-    void computeFNextList();
     void changeNeighbors(std::vector<int> previous_indices, int currentIndex, std::vector<int> triangle_ids);
 
 public:
+    void computeFNextList();
+
 	myObjType() { vcount = 0; tcount = 0; };
 	void readFile(char* filename);  // assumming file contains a manifold
 	void writeFile(char* filename);  
@@ -33,7 +34,7 @@ public:
     void computeStat();
     void calculateFaceNormals();
     void calculateVertexNormals();
-    std::vector<int> mergeUnique(std::vector<int> vector1, std::vector<int> vector2);
+    //std::vector<int> mergeUnique(std::vector<int> vector1, std::vector<int> vector2);
 
     void calculateAngleStatistics();
     void computeNumberOfComponents();

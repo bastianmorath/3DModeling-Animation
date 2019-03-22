@@ -322,91 +322,56 @@ void myObjType::computeStat()
 
 void myObjType::computeFNextList() {
     // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it
-    map<pair<int, int>, pair<int, int>> mymap;
+    map<set<int>, set<int>> mymap;
     // mymap.insert(make_pair(make_pair(1,2), 3)); //edited
     
     for (int i=1; i <= tcount; i++) {
 
         int v[3] = {tlist[i][0], tlist[i][1], tlist[i][2]};
-        std::vector<int> v_vec (v, v+3);
-        std::sort(std::begin(v_vec), std::end(v_vec));
-        
-        int v0 = v_vec[0];
-        int v1 = v_vec[1];
-        int v2 = v_vec[2];
+   
+        int v0 = v[0];
+        int v1 = v[1];
+        int v2 = v[2];
 
-        // Somehow version is always one too big, so do it manually.. Ugly..
-        std::map<int, int> my_map = {
-            { 0, 2 },
-            { 1, 0 },
-            { 2, 1 },
-           
-        };
-        int f0 =  i << 3 | my_map[int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][0])))];
-        int f1 =  i << 3 | my_map[int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][1])))];
-        int f2 =  i << 3 | my_map[int(distance(v_vec.begin(), find(v_vec.begin(), v_vec.end(), tlist[i][2])))];
+        int f0 =  i << 3 | 0;
+        int f1 =  i << 3 | 1;
+        int f2 =  i << 3 | 2;
         
         // f0
-        std::pair<int, int> key0 = make_pair(v0, v1);
-        if (mymap.count(key0) != 0) { // One face already stored
-            mymap[key0] = make_pair(mymap[key0].first, f0); //store old and new face
-        } else {
-            mymap.insert(make_pair(key0, make_pair(f0, 0))); //store new face, leave the other blank, i.e. 0
-        }
+        std::set<int> key0 = {v0, v1};
+        mymap[key0].insert(f0); //store old and new face
+       
         
         // f1
-        std::pair<int, int> key1 = make_pair(v1, v2);
-        if (mymap.count(key1) != 0) { // One face already stored
-            mymap[key1] = make_pair(mymap[key1].first, f1); //store old and new face
-        } else {
-            mymap.insert(make_pair(key1, make_pair(f1, 0))); //store new face, leave the other blank, i.e. 0
-        }
+        std::set<int> key1 = {v1, v2};
+        mymap[key1].insert(f1); //store old and new face
         
         // f2
-        std::pair<int, int> key2 = make_pair(v0, v2);
-        if (mymap.count(key2) != 0) { // One face already stored
-            mymap[key2] = make_pair(mymap[key2].first, f2); //store old and new face
-        } else {
-            mymap.insert(make_pair(key2, make_pair(f2, 0))); //store new face, leave the other blank, i.e. 0
-        }
-    } // Hashmap created
-    /*
-    for(auto& elem : mymap)
-    {
-        std::cout << "{" << elem.first.first << ",  " << elem.first.second << "}: {" <<  (elem.second.first >> 3) << "," << (elem.second.second >> 3) << "}\n";
-    }
-    */
-    for (int i=1; i <= tcount; i++) {
-        int o = min(tlist[i][0], tlist[i][1]) ;
-        int d = max(tlist[i][0], tlist[i][1]) ;
-        // std::cout << "Org.: " << tlist[i][0] << ", Dest: " <<  tlist[i][1] << "\n";
-
-         // int current_face =  i << 3 | 0;
-      
-        std::pair<int, int> opposite_faces = mymap[make_pair(o, d)];
-        //std::cout << "{TrObj: " << (current_face) << ", index:  " << (current_face >>3) << ", version: " << (current_face & ((1 << 2) - 1)
-        // )  << ". Opposite: " << (opposite_faces.first) << std::endl;
-        fnlist[i][0] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
-        
-        o = min(tlist[i][1], tlist[i][2]);
-        d = max(tlist[i][1], tlist[i][2]);
-        
-        opposite_faces = mymap[make_pair(o, d)];
-
-        fnlist[i][1] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
-       
-        o = min(tlist[i][0], tlist[i][2]);
-        d = max(tlist[i][0], tlist[i][2]);
-        
-        opposite_faces = mymap[make_pair(o, d)];
-        fnlist[i][2] = i == (opposite_faces.first >> 3) ? opposite_faces.second : opposite_faces.first; // Opposite face is the one that is not the current_face
-        
-        std::cout << (fnlist[i][0] >> 3) << ", " << (fnlist[i][0] & ((1 << 2) - 1))
-        << " | " <<(fnlist[i][1] >> 3) << ", " << (fnlist[i][1] & ((1 << 2) - 1))
-        << " | " << (fnlist[i][2] >> 3) << ", " << (fnlist[i][2] &  ((1 << 2) - 1)) << std::endl;
+        std::set<int> key2 = {v0, v2};
+        mymap[key2].insert(f2); //store old and new face
         
     }
+    // Hashmap created
     
+    for (int i=1; i <= tcount; i++) {
+
+        for (int version = 0; version<3;version++) {
+            std::set<int> key ={tlist[i][version], tlist[i][(version + 1) % 3]};
+            
+            std::set<int> opposite_faces = mymap[key];
+            int face0 = *std::next(opposite_faces.begin(), 0);
+            int face1 = *std::next(opposite_faces.begin(), 1);
+            
+            fnlist[i][version] = i == (face0 >> 3) ? face1 : face0; // Opposite face is the one that is not the current_face
+        }
+       
+        
+        
+//        std::cout << (fnlist[i][0] >> 3) << ", " << (fnlist[i][0] & ((1 << 2) - 1))
+//        << " | " <<(fnlist[i][1] >> 3) << ", " << (fnlist[i][1] & ((1 << 2) - 1))
+//        << " | " << (fnlist[i][2] >> 3) << ", " << (fnlist[i][2] &  ((1 << 2) - 1)) << std::endl;
+        
+    }
 }
 
 
@@ -472,17 +437,14 @@ bool myObjType::orientTriangles() {
                 //if (neighbor_version == 0) {
                     v0 = tlist[neighbor_index][0];
                     v1 = tlist[neighbor_index][1];
-                    std::cout << v0 << ", " << v1 << std::endl;
 
                 //} else if (neighbor_version == 1){
                     v0 = tlist[neighbor_index][1];
                     v1 = tlist[neighbor_index][2];
-                std::cout << v0 << ", " << v1 << std::endl;
 
                 // } else {
                     v0 = tlist[neighbor_index][2];
                     v1 = tlist[neighbor_index][0];
-                std::cout << v0 << ", " << v1 << std::endl;
 
                 //}
                 if (neighbor_version == 0) {
@@ -552,20 +514,3 @@ bool myObjType::orientTriangles() {
 
     return true;
 }
-/*
-void myObjType::checkOrientation(std::vector<set<int>> &v, set<int> &seenIndices, int index) {
-    int numComponents = int(v.size());
-    seenIndices.insert(index);
-    v[numComponents-1].insert(index);
-    for (int version=0; version <3; version++) {
-        int orTri_neighbor = fnlist[index][version];
-        if (orTri_neighbor != 0) { // If no edge vertex
-            int neighbor_index = orTri_neighbor >> 3;
-            if (v[numComponents-1].find(neighbor_index) == v[numComponents-1].end()) { // Element not yet seen
-                findNeighbors(v, seenIndices, neighbor_index);
-            }
-        }
-    }
-    
-}
-*/
