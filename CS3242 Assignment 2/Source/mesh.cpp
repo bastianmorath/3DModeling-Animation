@@ -31,41 +31,43 @@ using namespace std;
 
 
 void myObjType::draw(bool smooth, bool edges) {
-
-	glEnable(GL_LIGHTING);
-
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-	glPushMatrix();
-	double longestSide = 0.0;
-	for (int i = 0; i < 3; i++)
-		if ((lmax[i] - lmin[i]) > longestSide)
-			longestSide = (lmax[i] - lmin[i]);
-	glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
-	glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
     
-    for (int i = 1; i <= tcount; i++)
-    {
-        // uncomment the following after you computed the normals
-        if (!smooth) {
-            glNormal3dv(nlist[i]);
-        }
-        glBegin(GL_POLYGON);
-        for (int j = 0; j < 3; j++){
-            if (smooth) {
-                glNormal3dv(vnlist[tlist[i][j]]);
+    glEnable(GL_LIGHTING);
+    
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+    
+    glPushMatrix();
+    double longestSide = 0.0;
+    for (int i = 0; i < 3; i++)
+        if ((lmax[i] - lmin[i]) > longestSide)
+            longestSide = (lmax[i] - lmin[i]);
+    glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
+    glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
+    
+    
+    if (edges){
+        drawEdges();
+    } else {
+        for (int i = 1; i <= tcount; i++)
+        {
+            if (!smooth) {
+                glNormal3dv(nlist[i]);
             }
-            glVertex3dv(vlist[tlist[i][j]]);
+            glBegin(GL_POLYGON);
+            for (int j = 0; j < 3; j++){
+                if (smooth) {
+                    glNormal3dv(vnlist[tlist[i][j]]);
+                }
+                glVertex3dv(vlist[tlist[i][j]]);
+            }
+            glEnd();
         }
-        glEnd();
     }
     
-    // drawEdges(smooth);
-
-	glDisable(GL_LIGHTING);
+    glDisable(GL_LIGHTING);
     glutPostRedisplay(); // So that image is not black at the beginning
-
-	glPopMatrix();
+    
+    glPopMatrix();
 }
 
 void myObjType::writeFile(char* filename)
@@ -80,74 +82,74 @@ void myObjType::writeFile(char* filename)
     
     std::ofstream outfile (filename);
     outfile << lines.str() << std::endl;
-
+    
     outfile.close();
     
 }
 
 void myObjType::readFile(char* filename)
 {
-	cout << "Opening " << filename << endl;
-	ifstream inFile;
-	inFile.open(filename);
-	if (!inFile.is_open()) {
-		cout << "We cannot find your file " << filename << endl;
-		exit(1);
-	}
-
-	string line;
-	int i, j;
-	bool firstVertex = 1;
-	double currCood;
-
-	while (getline(inFile, line))
-	{
-		if ((line[0] == 'v' || line[0] == 'f') && line[1] == ' ')
-		{
-			if (line[0] == 'v')
-			{
-				vcount++;
-				i = 1;
-				const char* linec = line.data();
-				for (int k = 0; k < 3; k++) { // k is 0,1,2 for x,y,z
-					while (linec[i] == ' ') i++;
-					j = i;
-					while (linec[j] != ' ') j++;
-					currCood = vlist[vcount][k] = atof(line.substr(i, j - i).c_str());
-					if (firstVertex) 
-						lmin[k] = lmax[k] = currCood;
-					else {
-						if (lmin[k] > currCood)
-							lmin[k] = currCood;
-						if (lmax[k] < currCood)
-							lmax[k] = currCood;
-					}
-					i = j;
-				}
-
-				firstVertex = 0;
-			}
-			if (line[0] == 'f')
-			{
-				tcount++;
-				i = 1;
-				const char* linec = line.data();
-				for (int k = 0; k < 3; k++) {
-					while (linec[i] == ' ') i++;
-					j = i;
-					while (linec[j] != ' ' && linec[j] != '\\') j++;
-					tlist[tcount][k] = atof(line.substr(i, j - i).c_str());
-					i = j;
-					fnlist[tcount][k] = 0;
-					while (linec[j] != ' ') j++;
-
-				}
-
-			}
-
-
-		}
-	}
+    cout << "Opening " << filename << endl;
+    ifstream inFile;
+    inFile.open(filename);
+    if (!inFile.is_open()) {
+        cout << "We cannot find your file " << filename << endl;
+        exit(1);
+    }
+    
+    string line;
+    int i, j;
+    bool firstVertex = 1;
+    double currCood;
+    
+    while (getline(inFile, line))
+    {
+        if ((line[0] == 'v' || line[0] == 'f') && line[1] == ' ')
+        {
+            if (line[0] == 'v')
+            {
+                vcount++;
+                i = 1;
+                const char* linec = line.data();
+                for (int k = 0; k < 3; k++) { // k is 0,1,2 for x,y,z
+                    while (linec[i] == ' ') i++;
+                    j = i;
+                    while (linec[j] != ' ') j++;
+                    currCood = vlist[vcount][k] = atof(line.substr(i, j - i).c_str());
+                    if (firstVertex)
+                        lmin[k] = lmax[k] = currCood;
+                    else {
+                        if (lmin[k] > currCood)
+                            lmin[k] = currCood;
+                        if (lmax[k] < currCood)
+                            lmax[k] = currCood;
+                    }
+                    i = j;
+                }
+                
+                firstVertex = 0;
+            }
+            if (line[0] == 'f')
+            {
+                tcount++;
+                i = 1;
+                const char* linec = line.data();
+                for (int k = 0; k < 3; k++) {
+                    while (linec[i] == ' ') i++;
+                    j = i;
+                    while (linec[j] != ' ' && linec[j] != '\\') j++;
+                    tlist[tcount][k] = atof(line.substr(i, j - i).c_str());
+                    i = j;
+                    fnlist[tcount][k] = 0;
+                    while (linec[j] != ' ') j++;
+                    
+                }
+                
+            }
+            
+            
+        }
+    }
     calculateFaceNormals();
     calculateVertexNormals();
     computeFNextList();
@@ -220,7 +222,7 @@ int myObjType::enext(int orTri)
 {
     int version = orTri & ((1 << 2) - 1);
     // std::cout << version << std::endl;
-
+    
     int triangleIndex = orTri >> 3;
     
     std::map<int, int> my_map = {
@@ -305,7 +307,7 @@ void myObjType::computeStat()
         
         minAngle = minAngle < min ? minAngle : min;
         maxAngle = maxAngle > max ? maxAngle : max;
-
+        
     }
     
     cout << "Statistics for Maximum Angles" << endl;
@@ -327,13 +329,13 @@ void myObjType::computeFNextList() {
     // mymap.insert(make_pair(make_pair(1,2), 3)); //edited
     
     for (int i=1; i <= tcount; i++) {
-
+        
         int v[3] = {tlist[i][0], tlist[i][1], tlist[i][2]};
-   
+        
         int v0 = v[0];
         int v1 = v[1];
         int v2 = v[2];
-
+        
         int f0 =  i << 3 | 0;
         int f1 =  i << 3 | 1;
         int f2 =  i << 3 | 2;
@@ -341,7 +343,7 @@ void myObjType::computeFNextList() {
         // f0
         std::set<int> key0 = {v0, v1};
         mymap[key0].insert(f0); //store old and new face
-       
+        
         
         // f1
         std::set<int> key1 = {v1, v2};
@@ -355,7 +357,7 @@ void myObjType::computeFNextList() {
     // Hashmap created
     
     for (int i=1; i <= tcount; i++) {
-
+        
         for (int version = 0; version<3;version++) {
             std::set<int> key ={tlist[i][version], tlist[i][(version + 1) % 3]};
             
@@ -367,12 +369,12 @@ void myObjType::computeFNextList() {
             
             fnlist[i][version] = i == (face0 >> 3) ? face1 : face0; // Opposite face is the one that is not the current_face
         }
-       
         
         
-//        std::cout << (fnlist[i][0] >> 3) << ", " << (fnlist[i][0] & ((1 << 2) - 1))
-//        << " | " <<(fnlist[i][1] >> 3) << ", " << (fnlist[i][1] & ((1 << 2) - 1))
-//        << " | " << (fnlist[i][2] >> 3) << ", " << (fnlist[i][2] &  ((1 << 2) - 1)) << std::endl;
+        
+        //        std::cout << (fnlist[i][0] >> 3) << ", " << (fnlist[i][0] & ((1 << 2) - 1))
+        //        << " | " <<(fnlist[i][1] >> 3) << ", " << (fnlist[i][1] & ((1 << 2) - 1))
+        //        << " | " << (fnlist[i][2] >> 3) << ", " << (fnlist[i][2] &  ((1 << 2) - 1)) << std::endl;
         
     }
 }
@@ -383,7 +385,7 @@ void myObjType::computeNumberOfComponents() {
     
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
-
+    
     while (seenIndices.size() < tcount) {
         set<int> s;
         v.push_back(s);
@@ -422,9 +424,9 @@ int myObjType::getIndexNotYetSeen(set<int> v) {
 
 bool myObjType::orientTriangles() {
     std::cout << "Orienting Triangles..." << std::endl;
-
+    
     std::set<int> seenIndices;
-
+    
     bool success;
     while (seenIndices.size() < tcount) {
         int notSeenIndex = getIndexNotYetSeen(seenIndices);
@@ -441,16 +443,16 @@ bool myObjType::orientTriangles() {
     calculateVertexNormals();
     
     std::cout << "Successfully oriented triangles!" << std::endl;
-
+    
     return true;
 }
-    
+
 bool myObjType::checkOrientationIndex(int index, std::set<int> &currentComponentIds, std::set<int> &seenIndices) {
     for (int version=0; version <3; version++) { // Check each neighbor
         int orTri_neighbor = fnlist[index][version];
         int neighbor_index = orTri_neighbor >> 3;
         if (orTri_neighbor != 0) { // If no edge vertex
-           
+            
             int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
             bool hasConflict = conflict(index, version, neighbor_index, neighbor_version);
             if (currentComponentIds.find(neighbor_index) != currentComponentIds.end()) { // Element already seen
@@ -466,12 +468,12 @@ bool myObjType::checkOrientationIndex(int index, std::set<int> &currentComponent
                 }
                 currentComponentIds.insert(neighbor_index);
                 seenIndices.insert(neighbor_index);
-
+                
                 checkOrientationIndex(neighbor_index, currentComponentIds, seenIndices);
             }
         }
     }
-
+    
     return true;
 }
 
@@ -481,7 +483,7 @@ bool myObjType::conflict(int t1Index, int t1Version, int t2Index, int t2Version)
     return t1Vertices == t2Vertices;
 }
 
-    
+
 pair<int, int> myObjType::getVerticesForVersion(int triangleIndex, int version) {
     int v0, v1;
     if (version == 0) {
@@ -500,39 +502,37 @@ pair<int, int> myObjType::getVerticesForVersion(int triangleIndex, int version) 
     return make_pair(v0, v1);
 }
 
-void myObjType::drawEdges(bool smooth) {
-    std::set<int> edgeVerticesSet;
-    for (int i=1; i <= tcount; i++) {
-        // Check each triangle
-        for (int version=0; version <3; version++) {
-            int orTri_neighbor = fnlist[i][version];
-            if (orTri_neighbor == 0) { // Edge vertices!
-                pair<int, int> edgeVertices = getVerticesForVersion(i, version);
-                edgeVerticesSet.insert(edgeVertices.first);
-                edgeVerticesSet.insert(edgeVertices.second);
+void myObjType::drawEdges() {
+    //std::cout << "Drawing Edges..." << std::endl;
+    static bool initialized;
+    static std::set<std::pair<int, int>> edgeVerticesSet;
+    
+    if (!initialized) {
+        for (int i=1; i <= tcount; i++) {
+            // Check each triangle
+            for (int version=0; version <3; version++) {
+                int orTri_neighbor = fnlist[i][version];
+                if (orTri_neighbor == 0) { // Edge vertices!
+                    pair<int, int> edgeVertices = getVerticesForVersion(i, version);
+                    edgeVerticesSet.insert(make_pair(edgeVertices.first, edgeVertices.second));
+                }
             }
         }
+        initialized = true;
     }
     
-    for (int i = 1; i <= tcount; i++)
-    {
-        if (!smooth) {
-            glNormal3dv(nlist[i]);
-        }
-        glBegin(GL_POLYGON);
-
-        for (int j = 0; j < 3; j++){
-            if (edgeVerticesSet.find(i*3 + j) != edgeVerticesSet.end()) { // Edge
-                glEdgeFlag(GL_TRUE);
-                glColor3f(1.0f, 0.2f, 0.0f); // make this vertex red
-                if (smooth) {
-                    glNormal3dv(vnlist[tlist[i][j]]);
-                }
-                glVertex3dv(vlist[tlist[i][j]]);
-            }
-        }
+    // Default : lighting
+    glDisable(GL_LIGHTING);
+    
+    for (auto& edge: edgeVerticesSet){
+        glBegin(GL_LINES);
+        glColor3f(1.0f, 0.0f, 0.0f); // make this vertex red
+        glVertex3dv(vlist[edge.first]);
+        glVertex3dv(vlist[edge.second]);
         glEnd();
-        glEdgeFlag(GL_FALSE);
-
+        
     }
+    
+    // Default : lighting
+    glEnable(GL_LIGHTING);
 }

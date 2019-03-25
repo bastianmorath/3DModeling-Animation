@@ -28,7 +28,7 @@ myObjType myObj;
 // global variable
 
 bool m_Smooth = FALSE;
-bool m_Edges = FALSE;
+bool m_edges = FALSE;
 bool m_Highlight = FALSE;
 GLfloat angle = 0;   /* in degrees */
 GLfloat angle2 = 0;   /* in degrees */
@@ -89,7 +89,7 @@ void display(void)
 		glRotatef(angle2, 1.0, 0.0, 0.0);
 		glRotatef(angle, 0.0, 1.0, 0.0);
 		glScalef(zoom, zoom, zoom);
-		myObj.draw(m_Smooth, m_Edges);
+		myObj.draw(m_Smooth, m_edges);
 	glPopMatrix();
 	glutSwapBuffers ();
 }
@@ -101,6 +101,10 @@ void keyboard (unsigned char key, int x, int y)
 {
 	char filename[256];
 	switch (key) {
+    case 'e':
+    case 'E':
+        m_edges = !m_edges;
+        break;
 	case 'p':
 	case 'P':
 		glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
