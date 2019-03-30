@@ -157,7 +157,7 @@ void myObjType::readFile(const char* filename)
     cout << "No. of triangles: " << tcount << endl;
     computeAngleStatistics();
     computeNumberOfComponents();
-    orientTriangles();
+    orientTriangles(); // TODO: Number of faces changed
 }
 
 
@@ -201,12 +201,10 @@ void myObjType::calculateFaceNormals()
  */
 void myObjType::calculateVertexNormals()
 {
-    // We suggest you to compute the normals here
     for (int i=1; i <= vcount; i++) {
         std::vector<int> adjacent_triangle_indices;
-        
-        for(int column=1;column<=3;++column)
-            for(int row=1;row<=tcount;++row)
+        for(int row=1;row<=tcount;++row)
+            for(int column=0;column<3;++column)
                 if(triangleList[row][column] == i)
                     adjacent_triangle_indices.push_back(row);
         
@@ -316,7 +314,7 @@ void myObjType::computeAngleStatistics()
         statMinAngle[int(floor(min / 10))] += 1;
         statMaxAngle[int(floor(max / 10))] += 1;
         
-        minAngle = minAngle < min ? minAngle : min;
+        minAngle = minAngle < min ? minAngle : min;  // TODO: CHECK worng
         maxAngle = maxAngle > max ? maxAngle : max;
         
     }
@@ -457,7 +455,7 @@ int myObjType::getIndexNotYetSeen(const set<int> t_v) {
 bool myObjType::orientTriangles() {
     std::cout << "Orienting Triangles..." << std::endl;
     
-    std::set<int> seenIndices;t
+    std::set<int> seenIndices;
     
     bool success;
     while (seenIndices.size() < tcount) {
