@@ -291,7 +291,7 @@ int myObjType::dest(const int t_orTri)
  */
 void myObjType::computeAngleStatistics()
 {
-    double minAngle = 0;
+    double minAngle = 360;
     double maxAngle = 0;
     
     for (int i=1; i <= tcount; i++) {
@@ -314,7 +314,7 @@ void myObjType::computeAngleStatistics()
         statMinAngle[int(floor(min / 10))] += 1;
         statMaxAngle[int(floor(max / 10))] += 1;
         
-        minAngle = minAngle < min ? minAngle : min;  // TODO: CHECK worng
+        minAngle = minAngle < min ? minAngle : min;
         maxAngle = maxAngle > max ? maxAngle : max;
         
     }
@@ -340,55 +340,58 @@ void myObjType::computeAngleStatistics()
 void myObjType::computeFNextList() {
     // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it
     map<set<int>, set<int>> mymap;
-    // mymap.insert(make_pair(make_pair(1,2), 3)); //edited
     
     for (int i=1; i <= tcount; i++) {
         
-        int v[3] = {triangleList[i][0], triangleList[i][1], triangleList[i][2]};
-        
-        int v0 = v[0];
-        int v1 = v[1];
-        int v2 = v[2];
+        Eigen::Vector3i v(triangleList[i][0], triangleList[i][1], triangleList[i][2]);
         
         int f0 =  i << 3 | 0;
         int f1 =  i << 3 | 1;
         int f2 =  i << 3 | 2;
         
         // f0
-        std::set<int> key0 = {v0, v1};
+        std::set<int> key0 = {v[0], v[1]};
         mymap[key0].insert(f0); //store old and new face
         
         
         // f1
-        std::set<int> key1 = {v1, v2};
+        std::set<int> key1 = {v[1], v[2]};
         mymap[key1].insert(f1); //store old and new face
         
         // f2
-        std::set<int> key2 = {v0, v2};
+        std::set<int> key2 = {v[0], v[2]};
         mymap[key2].insert(f2); //store old and new face
         
     }
+    /*
+    for(auto& elem : mymap)
+    {
+        std::vector<int> keys(elem.first.begin(), elem.first.end());
+        std::vector<int> values(elem.second.begin(), elem.second.end());
+
+        std::cout << "{" << keys[0] << ",  " << keys[1] << "}: {idx: " <<  (values[0] >> 3) << " , v: " << (values[0] & ((1 << 2) - 1) ) << " || idx: " <<  (values[1] >> 3) << " , v: " << (values[1] & ((1 << 2) - 1) ) << "}\n";
+    }
+     */
     // Hashmap created
     
     for (int i=1; i <= tcount; i++) {
         
         for (int version = 0; version<3;version++) {
-            std::set<int> key ={triangleList[i][version], triangleList[i][(version + 1) % 3]};
+            std::set<int> key = {triangleList[i][version], triangleList[i][(version + 1) % 3]};
             
             std::set<int> opposite_faces = mymap[key];
             int face0 = *std::next(opposite_faces.begin(), 0);
             int face1 = *std::next(opposite_faces.begin(), 1);
-            // If face1 index is not <=tcount, then this is not a face, but an edge face!
+            // If face1 index is not <=tcount, then this is not a face, but an edge face! -> Store 0
             face1 = (face1 >> 3) <= tcount ? face1 : 0;
+            int fnext = i == (face0 >> 3) ? face1 : face0;
             
-            fNextList[i][version] = i == (face0 >> 3) ? face1 : face0; // Opposite face is the one that is not the current_face
+            // std::cout << "Edge: {" << triangleList[i][version] << ",  " << triangleList[i][(version + 1) % 3] <<"} -> fnext:{idx: "
+            // <<  (fnext >> 3) << " , v: " << (fnext & ((1 << 2) - 1) ) << "}\n";
+            
+            fNextList[i][version] = fnext; // Opposite face is the one that is not the current_face
         }
         
-        
-        
-        //        std::cout << (fNextList[i][0] >> 3) << ", " << (fNextList[i][0] & ((1 << 2) - 1))
-        //        << " | " <<(fNextList[i][1] >> 3) << ", " << (fNextList[i][1] & ((1 << 2) - 1))
-        //        << " | " << (fNextList[i][2] >> 3) << ", " << (fNextList[i][2] &  ((1 << 2) - 1)) << std::endl;
         
     }
 }
@@ -458,11 +461,15 @@ bool myObjType::orientTriangles() {
     std::set<int> seenIndices;
     
     bool success;
+    int num_triangles_oriented = 0;
     while (seenIndices.size() < tcount) {
         int notSeenIndex = getIndexNotYetSeen(seenIndices);
         std::set<int> currentComponentIds = {notSeenIndex};
         seenIndices.insert(notSeenIndex);
-        success = checkOrientationIndex(notSeenIndex, currentComponentIds, seenIndices);
+        pair<bool, int> p = checkOrientationIndex(notSeenIndex, currentComponentIds, seenIndices);
+
+        success = p.first;
+        num_triangles_oriented += p.second;
         if (!success) {
             std::cout << "Failure in orienting triangles!" << std::endl;
             return false;
@@ -471,13 +478,19 @@ bool myObjType::orientTriangles() {
     computeFNextList();
     calculateFaceNormals();
     calculateVertexNormals();
-    
-    std::cout << "Successfully oriented triangles!" << std::endl;
-    
+    if (num_triangles_oriented == 0) {
+        std::cout << "No triangles had to be oriented!" << std::endl;
+
+    } else {
+        std::cout << "Successfully oriented " << num_triangles_oriented << " triangles!" << std::endl;
+
+    }
+
     return true;
 }
 
-bool myObjType::checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices) {
+pair<bool, int> myObjType::checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices) {
+    int num_triangles_oriented = 0;
     for (int version=0; version <3; version++) { // Check each neighbor
         int orTri_neighbor = fNextList[t_index][version];
         int neighbor_index = orTri_neighbor >> 3;
@@ -487,7 +500,7 @@ bool myObjType::checkOrientationIndex(const int t_index, std::set<int> &t_curren
             bool hasConflict = conflict(t_index, version, neighbor_index, neighbor_version);
             if (t_currentComponentIds.find(neighbor_index) != t_currentComponentIds.end()) { // Element already seen
                 if (hasConflict) {
-                    return false;
+                    return make_pair(false, 0);
                 }
             } else {
                 if (hasConflict) {
@@ -495,16 +508,19 @@ bool myObjType::checkOrientationIndex(const int t_index, std::set<int> &t_curren
                     int oldValue = triangleList[neighbor_index][1];
                     triangleList[neighbor_index][1] = triangleList[neighbor_index][2];
                     triangleList[neighbor_index][2] = oldValue;
+                    num_triangles_oriented +=1;
                 }
                 t_currentComponentIds.insert(neighbor_index);
                 t_seenIndices.insert(neighbor_index);
                 
-                checkOrientationIndex(neighbor_index, t_currentComponentIds, t_seenIndices);
+                pair<bool, int> p = checkOrientationIndex(neighbor_index, t_currentComponentIds, t_seenIndices);
+                if (!p.first) return make_pair(false, 0);
+                num_triangles_oriented += p.second;
             }
         }
     }
     
-    return true;
+    return make_pair(true, num_triangles_oriented);
 }
 
 bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version) {
@@ -513,7 +529,12 @@ bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t
     return t1Vertices == t2Vertices;
 }
 
-
+/**
+ * @desc Returns the two first vertices of a given triangle and version
+ * @param const int t_triangleIndex - triangle index
+ * @param const int t_version - version
+ * @return pair<int, int> - the two first vertices of triangle with index t_triangleIndex and version t_version
+ */
 pair<int, int> myObjType::getVerticesForVersion(const int t_triangleIndex, const int t_version) {
     int v0, v1;
     if (t_version == 0) {
@@ -533,7 +554,6 @@ pair<int, int> myObjType::getVerticesForVersion(const int t_triangleIndex, const
 }
 
 void myObjType::drawEdges() {
-    //std::cout << "Drawing Edges..." << std::endl;
     static bool initialized;
     static std::set<std::pair<int, int>> edgeVerticesSet;
     
@@ -551,18 +571,34 @@ void myObjType::drawEdges() {
         initialized = true;
     }
     
-    // Default : lighting
-    glDisable(GL_LIGHTING);
+    static bool stringInitialized;
+    static string noEdges = "This object does not have any edges!";
     
-    for (auto& edge: edgeVerticesSet){
-        glBegin(GL_LINES);
-        glColor3f(1.0f, 0.0f, 0.0f); // make this vertex red
-        glVertex3dv(vList[edge.first]);
-        glVertex3dv(vList[edge.second]);
-        glEnd();
-        
+    if (!stringInitialized) {
+        std::cout << noEdges << std::endl;
+        stringInitialized = true;
     }
     
-    // Default : lighting
-    glEnable(GL_LIGHTING);
+    if (edgeVerticesSet.empty()) {
+        if (!stringInitialized) {
+            std::cout << noEdges << std::endl;
+            stringInitialized = true;
+        }
+    } else {
+        // Default : lighting
+        glDisable(GL_LIGHTING);
+        
+        for (auto& edge: edgeVerticesSet){
+            glBegin(GL_LINES);
+            glColor3f(1.0f, 0.0f, 0.0f); // make this vertex red
+            glVertex3dv(vList[edge.first]);
+            glVertex3dv(vList[edge.second]);
+            glEnd();
+            
+        }
+        
+        // Default : lighting
+        glEnable(GL_LIGHTING);
+    }
+   
 }

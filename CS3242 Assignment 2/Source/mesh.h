@@ -48,7 +48,7 @@ private:
     */
     bool orientTriangles();
     bool conflict(const int t1Index, const int t1Version, const int t_t2Index, const int t_t2Version);
-    bool checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices);
+    std::pair<bool, int> checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices);
 
     /*
         Used for computing Face Normals
