@@ -150,6 +150,8 @@ void myObjType::readFile(const char* filename)
             
         }
     }
+
+    initAdjacencyLists();
     calculateFaceNormals();
     calculateVertexNormals();
     computeFNextList();
@@ -159,6 +161,80 @@ void myObjType::readFile(const char* filename)
     computeNumberOfComponents();
     orientTriangles(); // TODO: Number of faces changed
 }
+
+void myObjType::readFilePolygon(const char* filename)
+{
+    cout << "Opening " << filename << endl;
+    ifstream inFile;
+    inFile.open(filename);
+    if (!inFile.is_open()) {
+        cout << "We cannot find your file " << filename << endl;
+        exit(1);
+    }
+    
+    string line;
+    int i, j;
+    bool firstVertex = 1;
+    double currCood;
+    
+    while (getline(inFile, line))
+    {
+        if ((line[0] == 'v' || line[0] == 'f') && line[1] == ' ')
+        {
+            if (line[0] == 'v')
+            {
+                vcount++;
+                i = 1;
+                const char* linec = line.data();
+                for (int k = 0; k < 3; k++) { // k is 0,1,2 for x,y,z
+                    while (linec[i] == ' ') i++;
+                    j = i;
+                    while (linec[j] != ' ') j++;
+                    currCood = vList[vcount][k] = atof(line.substr(i, j - i).c_str());
+                    if (firstVertex)
+                        lmin[k] = lmax[k] = currCood;
+                    else {
+                        if (lmin[k] > currCood)
+                            lmin[k] = currCood;
+                        if (lmax[k] < currCood)
+                            lmax[k] = currCood;
+                    }
+                    i = j;
+                }
+                
+                firstVertex = 0;
+            }
+            if (line[0] == 'f')
+            {
+                tcount++;
+                i = 1;
+                const char* linec = line.data();
+                for (int k = 0; k < 4; k++) {
+                    while (linec[i] == ' ') i++;
+                    j = i;
+                    while (linec[j] != ' ' && linec[j] != '\\') j++;
+                    triangleList[tcount][k] = atof(line.substr(i, j - i).c_str());
+                    i = j;
+                    fNextList[tcount][k] = 0;
+                    while (linec[j] != ' ') j++;
+                    
+                }
+                
+            }
+            
+            
+        }
+    }
+    calculateFaceNormals();
+    calculateVertexNormals();
+    computeFNextList();
+    cout << "No. of vertices: " << vcount << endl;
+    cout << "No. of triangles: " << tcount << endl;
+    computeAngleStatistics();
+    computeNumberOfComponents();
+    orientTriangles(); // TODO: Number of faces changed
+}
+
 
 
 /**
@@ -286,7 +362,13 @@ int myObjType::dest(const int t_orTri)
 
 // PRIVATE MEMBERS
 
-/**
+/**for(auto& elem : mymap)
+    {
+        std::vector<int> keys(elem.first.begin(), elem.first.end());
+        std::vector<int> values(elem.second.begin(), elem.second.end());
+
+        std::cout << "{" << keys[0] << ",  " << keys[1] << "}: {idx: " <<  (values[0] >> 3) << " , v: " << (values[0] & ((1 << 2) - 1) ) << " || idx: " <<  (values[1] >> 3) << " , v: " << (values[1] & ((1 << 2) - 1) ) << "}\n";
+    }
  * @desc Computes the angles in all triangles and counts how many times they fall into each 10-degree angle bin
  */
 void myObjType::computeAngleStatistics()
@@ -316,7 +398,6 @@ void myObjType::computeAngleStatistics()
         
         minAngle = minAngle < min ? minAngle : min;
         maxAngle = maxAngle > max ? maxAngle : max;
-        
     }
     
     cout << "Statistics for Maximum Angles" << endl;
@@ -338,39 +419,10 @@ void myObjType::computeAngleStatistics()
  We can then easily traverse the triangle list once and find the corresponding adjacent triangle index for each triangle version
  */
 void myObjType::computeFNextList() {
-    // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it
-    map<set<int>, set<int>> mymap;
-    
-    for (int i=1; i <= tcount; i++) {
-        
-        Eigen::Vector3i v(triangleList[i][0], triangleList[i][1], triangleList[i][2]);
-        
-        int f0 =  i << 3 | 0;
-        int f1 =  i << 3 | 1;
-        int f2 =  i << 3 | 2;
-        
-        // f0
-        std::set<int> key0 = {v[0], v[1]};
-        mymap[key0].insert(f0); //store old and new face
-        
-        
-        // f1
-        std::set<int> key1 = {v[1], v[2]};
-        mymap[key1].insert(f1); //store old and new face
-        
-        // f2
-        std::set<int> key2 = {v[0], v[2]};
-        mymap[key2].insert(f2); //store old and new face
-        
-    }
+    // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it    
+   
     /*
-    for(auto& elem : mymap)
-    {
-        std::vector<int> keys(elem.first.begin(), elem.first.end());
-        std::vector<int> values(elem.second.begin(), elem.second.end());
-
-        std::cout << "{" << keys[0] << ",  " << keys[1] << "}: {idx: " <<  (values[0] >> 3) << " , v: " << (values[0] & ((1 << 2) - 1) ) << " || idx: " <<  (values[1] >> 3) << " , v: " << (values[1] & ((1 << 2) - 1) ) << "}\n";
-    }
+    
      */
     // Hashmap created
     
@@ -379,7 +431,7 @@ void myObjType::computeFNextList() {
         for (int version = 0; version<3;version++) {
             std::set<int> key = {triangleList[i][version], triangleList[i][(version + 1) % 3]};
             
-            std::set<int> opposite_faces = mymap[key];
+            std::set<int> opposite_faces = adjFacesToEdge[key];
             int face0 = *std::next(opposite_faces.begin(), 0);
             int face1 = *std::next(opposite_faces.begin(), 1);
             // If face1 index is not <=tcount, then this is not a face, but an edge face! -> Store 0
@@ -439,6 +491,41 @@ void myObjType::findNeighbors(std::vector<set<int>> &t_v, set<int> &t_seenIndice
     }
     
 }
+
+void myObjType::subdivideLoop(){
+    // 1. Build adjacency data structure
+    // 1.1 For each edge given by two vertices, give the two adjacent faces
+    // 1.2 For each edge given by two vertices, give two adjacent vertices
+    // 1.3 For each vertex, return neighboring vertices
+
+    // 2. Compute odd vertices (= new edge vertices)
+    // For each edge, compute v = 3/8 * (a+b) + 1/8 * (c+d)
+    // If edge: average
+
+
+    // 3. Compute even vertices
+    // Let n be the valence
+    // For each old vertex v:
+    //      Create new vertex v_new = v * (1-n * Beta)   + (Sum all neighbors) * Beta
+    //      If n=3 -> B=3/16; If n>3 -> B=3/8/n
+
+    // 4. Rebuild mesh / Connect vertices to create new faces
+   
+}
+
+
+void myObjType::getNeighboringVerticesOfVertex(int ind){
+
+}
+
+// Given two vertex indices, returns the two neighboring 
+void myObjType::getNeighboringVerticesOfEdge(std::set<int, int> s){
+
+}
+
+
+
+
 
 /**
  * @desc Finds a triangle index (from 1 to tcount) that is not in t_v. Returns the smallest one
@@ -601,4 +688,63 @@ void myObjType::drawEdges() {
         glEnable(GL_LIGHTING);
     }
    
+}
+
+void myObjType::initAdjacencyLists() {
+    // 1. Init adjFacesToEdge
+    // For an edge given by two vertices, store the adjacent faces
+     for (int i=1; i <= tcount; i++) {
+        Eigen::Vector3i v(triangleList[i][0], triangleList[i][1], triangleList[i][2]);
+        
+        int f0 =  i << 3 | 0;
+        int f1 =  i << 3 | 1;
+        int f2 =  i << 3 | 2;
+        
+        // f0
+        std::set<int> key0 = {v[0], v[1]};
+        adjFacesToEdge[key0].insert(f0); //store old and new face
+        
+        
+        // f1
+        std::set<int> key1 = {v[1], v[2]};
+        adjFacesToEdge[key1].insert(f1); //store old and new face
+        
+        // f2
+        std::set<int> key2 = {v[0], v[2]};
+        adjFacesToEdge[key2].insert(f2); //store old and new face
+    }
+
+    // 2. Init adjVerticesToEdge
+    // For an edge given by two vertices, store the adjacent one or two vertices
+    for(auto& elem : adjFacesToEdge)
+    {
+        std::set<int> edgeVertices(elem.first.begin(), elem.first.end());
+        std::set<int> orTriFaces(elem.second.begin(), elem.second.end());
+
+        std::set<int> vertices;
+        for (auto& faceIdx: orTriFaces) {
+            vertices.insert(triangleList[faceIdx][0]);
+            vertices.insert(triangleList[faceIdx][1]);
+            vertices.insert(triangleList[faceIdx][2]);
+        }
+        adjVerticesToEdge[edgeVertices] = vertices - edgeVertices; // Set difference
+    }
+
+    // 3. Init adjVerticesToVertex
+    // For a given vertex, store the adjacent vertices
+
+    for (int i=1; i <= tcount; i++) {
+        int idx0 = triangleList[i][0];
+        int idx1 = triangleList[i][1];
+        int idx2 = triangleList[i][2];
+
+        adjVerticesToVertex[idx0].insert(idx1);
+        adjVerticesToVertex[idx0].insert(idx2);
+
+        adjVerticesToVertex[idx1].insert(idx0);
+        adjVerticesToVertex[idx1].insert(idx2);
+
+        adjVerticesToVertex[idx2].insert(idx0);
+        adjVerticesToVertex[idx2].insert(idx1);
+    }
 }

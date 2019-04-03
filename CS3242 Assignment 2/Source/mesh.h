@@ -12,6 +12,8 @@ public:
     void draw(const bool t_smooth, const bool t_edges);
     void readFile(const char* filename);  // assumming file contains a manifold
     void writeFile(const char* filename);
+    void readFilePolygon(const char* filename);
+
     
 private:
 	int vcount = 0;
@@ -23,6 +25,10 @@ private:
     double triangleNormalList[MAXT][3];   // storing triangle normals
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
+    std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
+    std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
+
+    std::map<int, std::set<int>> adjVerticesToVertex; // faces adjacent to an edge given by two vertices
 
 	int statMinAngle[18];
 	int statMaxAngle[18];
@@ -37,7 +43,7 @@ private:
     */
 
    
-    
+    void initAdjacencyLists();
     void computeAngleStatistics();
     void calculateFaceNormals();
     void calculateVertexNormals();
@@ -56,6 +62,12 @@ private:
     void computeFNextList();
     void changeNeighbors(std::vector<int> t_previous_indices, const int t_currentIndex, std::vector<int> t_triangle_ids);
 
+
+    /*
+        Catmull-Clark Subdivision
+    */
+   
+    void subdivideLoop();
 
     /*
      Helper Methods
