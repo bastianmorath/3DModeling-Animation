@@ -13,6 +13,8 @@
 #include <map>
 #include <vector>
 
+using namespace std;
+
 namespace helper{
     /**
      * @desc Finds a triangle index (from 1 to tcount) that is not in t_v. Returns the smallest one
@@ -96,10 +98,22 @@ namespace helper{
         return (edgeVertex1 + edgeVertex2) /2 ;
     }
 
-    void fillVertexWithVector(double vList[MAXV][3], int idx, Eigen::Vector3d v){
-        vList[idx][0] = v[0];
-        vList[idx][1] = v[1];
-        vList[idx][2] = v[2];
+    std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v){
+        for (int i=1; i< vcount;i++){
+            if (vList[i][0]==v[0] && vList[i][1]==v[1] && vList[i][2]==v[2]) return make_pair(false, i); // Vertex already stored
+        }
+        
+        vList[vcount][0] = v[0];
+        vList[vcount][1] = v[1];
+        vList[vcount][2] = v[2];
+        
+        return make_pair(true, vcount);
+    }
+    
+    void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices){
+        tList[tcount][0] = vIndices[0];
+        tList[tcount][1] = vIndices[1];
+        tList[tcount][2] = vIndices[2];
     }
     
     /*
@@ -111,7 +125,7 @@ namespace helper{
         
         Eigen::Vector3d adjVertex1(vList[adjV1][0], vList[adjV1][1], vList[adjV1][2]);
         Eigen::Vector3d adjVertex2(vList[adjV2][0], vList[adjV2][1], vList[adjV2][2]);
-        return 3 / 8 * (edgeVertex1 + edgeVertex2) + 1 / 8 * (adjVertex1 + adjVertex2) ;
+        return 3.0 / 8.0 * (edgeVertex1 + edgeVertex2) + 1.0 / 8.0 * (adjVertex1 + adjVertex2) ;
     }
     
    

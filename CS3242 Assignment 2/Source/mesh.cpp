@@ -172,6 +172,8 @@ void myObjType::readFile(const char *filename)
     computeAngleStatistics();
     computeNumberOfComponents();
     orientTriangles(); // TODO: Number of faces changed
+    
+    subdivideLoop();
 }
 
 void myObjType::readFilePolygon(const char *filename)
@@ -478,6 +480,45 @@ namespace newSubdivision {
     int triangleList[MAXT][3];      // triangle list
     double vList[MAXV][3];
 }
+
+//
+template <class T>
+class t_pair {
+public:
+    T first;
+    T second;
+    
+    bool operator ==(const t_pair& rhs) const
+    {
+        return (first==rhs.first && second==rhs.second) || (first==rhs.second && second==rhs.first);
+        
+    }
+    
+    bool operator <(const t_pair& rhs) const
+    {
+        return (first<rhs.first && second<rhs.second) ||
+                (first<rhs.second && second>rhs.first) ||
+                (first>rhs.second && second<rhs.first) ||
+                (first>rhs.second && second>rhs.first);
+    }
+};
+
+class TriangleEdge {
+
+public:
+    t_pair<int> orTriPair; // Each edge has two adjacent
+    //int tIndex() { return (orTri >> 3);};
+    //int version1(){ return (orTri & ((1 << 2) - 1));};
+    int newLeftVertexIndex;
+    int newRightVertexIndex;
+    int newEdgeVertexIndex;
+    
+    bool operator< (TriangleEdge& e) const
+    {
+        return orTriPair < e.orTriPair;
+    }
+};
+
 void myObjType::subdivideLoop()
 {
     
@@ -489,38 +530,92 @@ void myObjType::subdivideLoop()
     // 2. Compute odd vertices (= new edge vertices)
     // For each edge, compute v = 3/8 * (a+b) + 1/8 * (c+d)
     // If edge: average
-    for (auto& elem: adjVerticesToEdge) {
-        std::set<int> edgeVertices(elem.first.begin(), elem.first.end());
-        int v1Idx = *std::next(edgeVertices.begin(), 0);
-        int v2Idx = *std::next(edgeVertices.begin(), 1);
-       
-        std::set<int> adjacentVertices(elem.second.begin(), elem.second.end());
-        
-        if (adjacentVertices.size() == 1) { // We have an adge with only one neighboring face
-            vcount++;
-            Eigen::Vector3d average = helper::getAverage(vList, v1Idx, v2Idx);
+    
+    std::set<TriangleEdge> edges;
+    
+    for (int i = 1; i <= tcount; i++) // For each triangle, we create 4 new triangles
+    {
+        std::vector<Eigen::Vector3d> oddVertices;
+        std::vector<Eigen::Vector3d> evenVertices;
 
-            helper::fillVertexWithVector(vList, vcount, average);
-        } else { // We have an edge with two neighboring faces
-            int adjIdx1 = *std::next(adjacentVertices.begin(), 0);
-            int adjIdx2 = *std::next(adjacentVertices.begin(), 1);
-            Eigen::Vector3d average = helper::getOddLoopVertex(vList, v1Idx, v2Idx, adjIdx1, adjIdx2);
+
+        for (int version = 0; version < 3; version++) // Iterate over each pair of edge vertices
+        {
+            std::set<int> edgeVertices = {triangleList[i][version], triangleList[i][(version + 1) % 3]};
+            std::set<int> adjacentEdgeVertices = adjVerticesToEdge[edgeVertices];
+            int edgeVertexIdx1 = *std::next(edgeVertices.begin(), 0);
+            int edgeVertexIdx2 = *std::next(edgeVertices.begin(), 1);
             
-            helper::fillVertexWithVector(vList, vcount, average);
+            // 2. Compute one new odd vertex from the two edge vertices
+            Eigen::Vector3d average;
+            if (adjacentEdgeVertices.size() == 1) { // We have an adge with only one neighboring face
+                vcount++;
+                average = helper::getAverage(newSubdivision::vList, edgeVertexIdx1, edgeVertexIdx2);
+            } else { // We have an edge with two neighboring faces
+                int adjIdx1 = *std::next(adjacentEdgeVertices.begin(), 0);
+                int adjIdx2 = *std::next(adjacentEdgeVertices.begin(), 1);
+                average = helper::getOddLoopVertex(vList, edgeVertexIdx1, edgeVertexIdx2, adjIdx1, adjIdx2);
+            }
+            oddVertices.push_back(average);
+          
+            
+            // 3. Compute one new even vertex from the first vertex of the edge
+            std::set<int> adjacentVertexVertices = adjVerticesToVertex[edgeVertexIdx1];
+            Eigen::Vector3d newVertex = helper::getEvenLoopVertex(vList, edgeVertexIdx1, adjacentVertexVertices);
+            evenVertices.push_back(newVertex);
+        }
+        
+        // 4. Rebuild mesh / Connect vertices to create new faces
+        vector<int> newVertexIndices;
+        for (int j=0;j<3;j++) {
+            pair<bool, int> result = helper::addVertexToVertexList(newSubdivision::vList, newSubdivision::vcount, oddVertices[i]);
+            newVertexIndices.push_back(result.second);
+            if (result.first) {
+                newSubdivision::vcount++;
+            }
+        }
+        for (int j=0;j<3;j++) {
+            pair<bool, int> result = helper::addVertexToVertexList(newSubdivision::vList, newSubdivision::vcount, evenVertices[i]);
+            newVertexIndices.push_back(result.second);
+            if (result.first) {
+                newSubdivision::vcount++;
+            }
+        }
+        
+        // Add 4 triangles from using the new vertices
+        Eigen::Vector3i t1(newVertexIndices[3], newVertexIndices[0], newVertexIndices[2]);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t1);
+        Eigen::Vector3i t2(newVertexIndices[0], newVertexIndices[4], newVertexIndices[1]);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t2);
+        Eigen::Vector3i t3(newVertexIndices[2], newVertexIndices[0], newVertexIndices[1]);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t3);
+        Eigen::Vector3i t4(newVertexIndices[2], newVertexIndices[1], newVertexIndices[5]);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t4);
+    }
+    tcount = newSubdivision::tcount;
+    vcount = newSubdivision::vcount;
+    
+    for(int a = 1; a < tcount + 1; ++a) {
+        for(int b = 0; b < 3 + 1; ++b) {
+            triangleList[a][b] = newSubdivision::triangleList[a][b];
         }
     }
-    
-    // 3. Compute even vertices
-    // Let n be the valence
-    // For each old vertex v:
-    //      Create new vertex v_new = v * (1-n * Beta)   + (Sum all neighbors) * Beta
-    //      If n=3 -> B=3/16; If n>3 -> B=3/8/n
-    for (auto& elem: adjVerticesToVertex) {
-        std::set<int> adjacentVertices(elem.second.begin(), elem.second.end());
-        Eigen::Vector3d newVec = helper::getEvenLoopVertex(vList, elem.first, adjacentVertices);
-        
+    for(int a = 1; a < vcount + 1; ++a) {
+        for(int b = 0; b < 3 + 1; ++b) {
+            vList[a][b] = newSubdivision::vList[a][b];
+        }
     }
-    // 4. Rebuild mesh / Connect vertices to create new faces
+    initAdjacencyLists();
+
+    calculateFaceNormals();
+    calculateVertexNormals();
+    computeFNextList();
+    cout << "No. of vertices: " << vcount << endl;
+    cout << "No. of triangles: " << tcount << endl;
+    computeAngleStatistics();
+    orientTriangles(); // TODO: Number of faces changed
+    
+    
 }
 
 /*
@@ -557,6 +652,7 @@ bool myObjType::orientTriangles()
             return false;
         }
     }
+    
     computeFNextList();
     calculateFaceNormals();
     calculateVertexNormals();

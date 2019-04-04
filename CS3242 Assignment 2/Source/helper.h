@@ -23,8 +23,9 @@ namespace helper {
     void findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int> > &t_v, std::set<int> &t_seenIndices, const int t_index);
     Eigen::Vector3d getAverage(double vList[MAXV][3], int v1Idx, int v2Idx);
     
-    void fillVertexWithVector(double vList[MAXV][3], int idx, Eigen::Vector3d v);
-    
+    std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v);
+    void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices);
+
     Eigen::Vector3d getOddLoopVertex(double vList[MAXV][3], int edgeV1, int edgeV2, int adjV1, int adjV2);
     Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices);
 
