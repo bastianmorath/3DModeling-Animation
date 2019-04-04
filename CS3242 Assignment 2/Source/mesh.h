@@ -5,6 +5,7 @@
 #define MAXT 1000000
 #include <Eigen/Dense>
 #include <set>
+#include <map>
 
 class myObjType {
 public:
@@ -27,7 +28,6 @@ private:
 	double lmin[3];          // the minimum coordinates of x,y,z
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
-
     std::map<int, std::set<int>> adjVerticesToVertex; // faces adjacent to an edge given by two vertices
 
 	int statMinAngle[18];
@@ -42,7 +42,6 @@ private:
      Setup Methods
     */
 
-   
     void initAdjacencyLists();
     void computeAngleStatistics();
     void calculateFaceNormals();
@@ -57,28 +56,18 @@ private:
     std::pair<bool, int> checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices);
 
     /*
-        Used for computing Face Normals
+        Used for computing fNext
      */
     void computeFNextList();
     void changeNeighbors(std::vector<int> t_previous_indices, const int t_currentIndex, std::vector<int> t_triangle_ids);
 
 
     /*
-        Catmull-Clark Subdivision
+        Subdivision
     */
    
     void subdivideLoop();
-
-    /*
-     Helper Methods
-    */
-    int getIndexNotYetSeen(const std::set<int> t_v);
-    double calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2);
-    std::pair<int, int> getVerticesForVersion(const int t_triangleIndex, const int t_version);
     void drawEdges();
-    void findNeighbors(std::vector<std::set<int> > &t_v, std::set<int> &t_seenIndices, const int t_index);
-
-
 
 };
 

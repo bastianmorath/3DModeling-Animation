@@ -26,6 +26,8 @@
 #include <array>
 #include <set>
 
+#include "helper.h"
+
 using namespace std;
 
 
@@ -237,18 +239,6 @@ void myObjType::readFilePolygon(const char* filename)
 
 
 
-/**
- * @desc Calculates the angle between two vectors
- * @param Vector3d t_tv1 - First vector
- * @param Vector3d t_tv2 - Second vector
- * @return double - Angle in Degrees
- */
-double myObjType::calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2){
-    
-    double dot = t_v1.dot(t_v2);
-    
-    return acos(dot / t_v1.norm() / t_v2.norm()) *180 / M_PI;
-}
 
 /**
  * @desc Calculates all face normals, using the cross product, and stores it in triangleNormalList
@@ -385,9 +375,9 @@ void myObjType::computeAngleStatistics()
         Eigen::Vector3d  v1_to_v3(v3 - v1);
         Eigen::Vector3d  v2_to_v3(v3 - v2);
         
-        double angle1 = calculateAngle(v1_to_v2, v1_to_v3);
+        double angle1 = helper::calculateAngle(v1_to_v2, v1_to_v3);
         
-        double angle2 = calculateAngle(-v1_to_v2, v2_to_v3);
+        double angle2 = helper::calculateAngle(-v1_to_v2, v2_to_v3);
         double angle3 = 180.0 - angle2 - angle1;
         
         double min = std::min(std::min(angle1, angle2), angle3);
@@ -425,7 +415,6 @@ void myObjType::computeFNextList() {
     
      */
     // Hashmap created
-    
     for (int i=1; i <= tcount; i++) {
         
         for (int version = 0; version<3;version++) {
@@ -443,8 +432,6 @@ void myObjType::computeFNextList() {
             
             fNextList[i][version] = fnext; // Opposite face is the one that is not the current_face
         }
-        
-        
     }
 }
 
@@ -463,34 +450,13 @@ void myObjType::computeNumberOfComponents() {
     while (seenIndices.size() < tcount) {
         set<int> s;
         v.push_back(s);
-        int notSeenIndex = getIndexNotYetSeen(seenIndices);
-        findNeighbors(v, seenIndices, notSeenIndex);
+        int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
+        helper::findNeighbors(fNextList, v, seenIndices, notSeenIndex);
     }
     
     std::cout << "Number of Components: " << v.size() << std::endl;
 }
 
-/**
- * @desc Finds all neighbors of a triangle
- * @param vector<set<int>> &t_v - a vector containing a set of triangles for each different component
- * @param set<int> &t_seenIndices - All vertices that we have traversed so far. Used to terminate recursion
- * @param int t_index - Index of triangle that we should start our search from
- */
-void myObjType::findNeighbors(std::vector<set<int>> &t_v, set<int> &t_seenIndices, const int t_index) {
-    int numComponents = int(t_v.size());
-    t_seenIndices.insert(t_index);
-    t_v[numComponents-1].insert(t_index);
-    for (int version=0; version <3; version++) {
-        int orTri_neighbor = fNextList[t_index][version];
-        if (orTri_neighbor != 0) { // If no edge vertex
-            int neighbor_index = orTri_neighbor >> 3;
-            if (t_v[numComponents-1].find(neighbor_index) == t_v[numComponents-1].end()) { // Element not yet seen
-                findNeighbors(t_v, t_seenIndices, neighbor_index);
-            }
-        }
-    }
-    
-}
 
 void myObjType::subdivideLoop(){
     // 1. Build adjacency data structure
@@ -513,7 +479,7 @@ void myObjType::subdivideLoop(){
    
 }
 
-
+/*
 void myObjType::getNeighboringVerticesOfVertex(int ind){
 
 }
@@ -522,25 +488,7 @@ void myObjType::getNeighboringVerticesOfVertex(int ind){
 void myObjType::getNeighboringVerticesOfEdge(std::set<int, int> s){
 
 }
-
-
-
-
-
-/**
- * @desc Finds a triangle index (from 1 to tcount) that is not in t_v. Returns the smallest one
- * @param set<int> t_v - Set of indices that have already been seen/traversed
- * @return int - Smallest such index
- */
-int myObjType::getIndexNotYetSeen(const set<int> t_v) {
-    for (int i=1; i<= tcount; i++){
-        if (t_v.find(i) == t_v.end()){
-            return i;
-        }
-    }
-    return -1;
-}
-
+*/
 
 bool myObjType::orientTriangles() {
     std::cout << "Orienting Triangles..." << std::endl;
@@ -550,7 +498,7 @@ bool myObjType::orientTriangles() {
     bool success;
     int num_triangles_oriented = 0;
     while (seenIndices.size() < tcount) {
-        int notSeenIndex = getIndexNotYetSeen(seenIndices);
+        int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
         std::set<int> currentComponentIds = {notSeenIndex};
         seenIndices.insert(notSeenIndex);
         pair<bool, int> p = checkOrientationIndex(notSeenIndex, currentComponentIds, seenIndices);
@@ -611,34 +559,12 @@ pair<bool, int> myObjType::checkOrientationIndex(const int t_index, std::set<int
 }
 
 bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version) {
-    pair<int, int> t1Vertices = getVerticesForVersion(t_t1Index, t_t1Version);
-    pair<int, int> t2Vertices = getVerticesForVersion(t_t2Index, t_t2Version);
+    pair<int, int> t1Vertices = helper::getVerticesForVersion(triangleList, t_t1Index, t_t1Version);
+    pair<int, int> t2Vertices = helper::getVerticesForVersion(triangleList, t_t2Index, t_t2Version);
     return t1Vertices == t2Vertices;
 }
 
-/**
- * @desc Returns the two first vertices of a given triangle and version
- * @param const int t_triangleIndex - triangle index
- * @param const int t_version - version
- * @return pair<int, int> - the two first vertices of triangle with index t_triangleIndex and version t_version
- */
-pair<int, int> myObjType::getVerticesForVersion(const int t_triangleIndex, const int t_version) {
-    int v0, v1;
-    if (t_version == 0) {
-        v0 = triangleList[t_triangleIndex][0];
-        v1 = triangleList[t_triangleIndex][1];
-        
-    } else if (t_version == 1){
-        v0 = triangleList[t_triangleIndex][1];
-        v1 = triangleList[t_triangleIndex][2];
-        
-    } else {
-        v0 = triangleList[t_triangleIndex][2];
-        v1 = triangleList[t_triangleIndex][0];
-        
-    }
-    return make_pair(v0, v1);
-}
+
 
 void myObjType::drawEdges() {
     static bool initialized;
@@ -650,7 +576,7 @@ void myObjType::drawEdges() {
             for (int version=0; version <3; version++) {
                 int orTri_neighbor = fNextList[i][version];
                 if (orTri_neighbor == 0) { // Edge vertices!
-                    pair<int, int> edgeVertices = getVerticesForVersion(i, version);
+                    pair<int, int> edgeVertices = helper::getVerticesForVersion(triangleList, i, version);
                     edgeVerticesSet.insert(make_pair(edgeVertices.first, edgeVertices.second));
                 }
             }
@@ -723,11 +649,16 @@ void myObjType::initAdjacencyLists() {
 
         std::set<int> vertices;
         for (auto& faceIdx: orTriFaces) {
-            vertices.insert(triangleList[faceIdx][0]);
-            vertices.insert(triangleList[faceIdx][1]);
-            vertices.insert(triangleList[faceIdx][2]);
+            int idx = faceIdx >> 3;
+            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 0).first);
+            vertices.insert(helper::getVerticesForVersion(triangleList, idx , 0).second);
+            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 1).first);
+            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 1).second);
+            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 2).first);
+            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 2).second);
         }
-        adjVerticesToEdge[edgeVertices] = vertices - edgeVertices; // Set difference
+        std::set_difference(vertices.begin(), vertices.end(), edgeVertices.begin(), edgeVertices.end(),
+                            std::inserter(adjVerticesToEdge[edgeVertices], adjVerticesToEdge[edgeVertices].end()));
     }
 
     // 3. Init adjVerticesToVertex
