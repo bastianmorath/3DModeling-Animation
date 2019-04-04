@@ -86,4 +86,52 @@ namespace helper{
         
     }
     
+    /*
+     For each edge, compute v = (a+b) / 2
+     */
+    Eigen::Vector3d getAverage(double vList[MAXV][3], int v1Idx, int v2Idx){
+        Eigen::Vector3d edgeVertex1(vList[v1Idx][0], vList[v1Idx][1], vList[v1Idx][2]);
+        Eigen::Vector3d edgeVertex2(vList[v2Idx][0], vList[v2Idx][1], vList[v2Idx][2]);
+        
+        return (edgeVertex1 + edgeVertex2) /2 ;
+    }
+
+    void fillVertexWithVector(double vList[MAXV][3], int idx, Eigen::Vector3d v){
+        vList[idx][0] = v[0];
+        vList[idx][1] = v[1];
+        vList[idx][2] = v[2];
+    }
+    
+    /*
+      For each edge, compute v = 3/8 * (a+b) + 1/8 * (c+d)
+    */
+    Eigen::Vector3d getOddLoopVertex(double vList[MAXV][3], int edgeV1, int edgeV2, int adjV1, int adjV2){
+        Eigen::Vector3d edgeVertex1(vList[edgeV1][0], vList[edgeV1][1], vList[edgeV1][2]);
+        Eigen::Vector3d edgeVertex2(vList[edgeV2][0], vList[edgeV2][1], vList[edgeV2][2]);
+        
+        Eigen::Vector3d adjVertex1(vList[adjV1][0], vList[adjV1][1], vList[adjV1][2]);
+        Eigen::Vector3d adjVertex2(vList[adjV2][0], vList[adjV2][1], vList[adjV2][2]);
+        return 3 / 8 * (edgeVertex1 + edgeVertex2) + 1 / 8 * (adjVertex1 + adjVertex2) ;
+    }
+    
+   
+    /*
+     v_new = v * (1-n * Beta)   + (Sum all neighbors) * Beta
+     */
+    Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices){
+        Eigen::Vector3d origVertex(vList[originalVertex][0], vList[originalVertex][1], vList[originalVertex][2]);
+        double n = neighboringVerticesIndices.size();
+        double beta = 0;
+        if (n==3.0) {
+            beta = 3.0 / 16.0;
+        } else {
+            beta = 3.0 / 8.0 / n;
+        }
+        Eigen::Vector3d sum(0.0, 0.0, 0.0);
+        for (auto& vecIdx: neighboringVerticesIndices) {
+            Eigen::Vector3d v(vList[vecIdx][0], vList[vecIdx][1], vList[vecIdx][2]);
+            sum += v;
+        }
+        return origVertex * (1 - n * beta) + sum * beta;
+    }
 }
