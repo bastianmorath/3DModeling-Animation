@@ -95,19 +95,18 @@ namespace helper{
         Eigen::Vector3d edgeVertex1(vList[v1Idx][0], vList[v1Idx][1], vList[v1Idx][2]);
         Eigen::Vector3d edgeVertex2(vList[v2Idx][0], vList[v2Idx][1], vList[v2Idx][2]);
         
-        return (edgeVertex1 + edgeVertex2) /2 ;
+        return (edgeVertex1 + edgeVertex2) / 2.0 ;
     }
 
     std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v){
-        for (int i=1; i< vcount;i++){
+        for (int i=1; i<= vcount;i++){
             if (vList[i][0]==v[0] && vList[i][1]==v[1] && vList[i][2]==v[2]) return make_pair(false, i); // Vertex already stored
         }
+        vList[vcount+1][0] = v[0];
+        vList[vcount+1][1] = v[1];
+        vList[vcount+1][2] = v[2];
         
-        vList[vcount][0] = v[0];
-        vList[vcount][1] = v[1];
-        vList[vcount][2] = v[2];
-        
-        return make_pair(true, vcount);
+        return make_pair(true, vcount+1);
     }
     
     void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices){

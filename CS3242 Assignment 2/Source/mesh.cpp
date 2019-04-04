@@ -538,19 +538,17 @@ void myObjType::subdivideLoop()
         std::vector<Eigen::Vector3d> oddVertices;
         std::vector<Eigen::Vector3d> evenVertices;
 
-
         for (int version = 0; version < 3; version++) // Iterate over each pair of edge vertices
         {
-            std::set<int> edgeVertices = {triangleList[i][version], triangleList[i][(version + 1) % 3]};
-            std::set<int> adjacentEdgeVertices = adjVerticesToEdge[edgeVertices];
-            int edgeVertexIdx1 = *std::next(edgeVertices.begin(), 0);
-            int edgeVertexIdx2 = *std::next(edgeVertices.begin(), 1);
+            std::pair<int, int> edgeVertices = std::make_pair(triangleList[i][version], triangleList[i][(version + 1) % 3]);
+            std::set<int> adjacentEdgeVertices = adjVerticesToEdge[{triangleList[i][version], triangleList[i][(version + 1) % 3]}];
+            int edgeVertexIdx1 = edgeVertices.first;
+            int edgeVertexIdx2 = edgeVertices.second;
             
             // 2. Compute one new odd vertex from the two edge vertices
             Eigen::Vector3d average;
             if (adjacentEdgeVertices.size() == 1) { // We have an adge with only one neighboring face
-                vcount++;
-                average = helper::getAverage(newSubdivision::vList, edgeVertexIdx1, edgeVertexIdx2);
+                average = helper::getAverage(vList, edgeVertexIdx1, edgeVertexIdx2);
             } else { // We have an edge with two neighboring faces
                 int adjIdx1 = *std::next(adjacentEdgeVertices.begin(), 0);
                 int adjIdx2 = *std::next(adjacentEdgeVertices.begin(), 1);
@@ -563,19 +561,20 @@ void myObjType::subdivideLoop()
             std::set<int> adjacentVertexVertices = adjVerticesToVertex[edgeVertexIdx1];
             Eigen::Vector3d newVertex = helper::getEvenLoopVertex(vList, edgeVertexIdx1, adjacentVertexVertices);
             evenVertices.push_back(newVertex);
+            std::cout << "" << std::endl;
         }
         
         // 4. Rebuild mesh / Connect vertices to create new faces
         vector<int> newVertexIndices;
         for (int j=0;j<3;j++) {
-            pair<bool, int> result = helper::addVertexToVertexList(newSubdivision::vList, newSubdivision::vcount, oddVertices[i]);
+            pair<bool, int> result = helper::addVertexToVertexList(newSubdivision::vList, newSubdivision::vcount, oddVertices[j]);
             newVertexIndices.push_back(result.second);
             if (result.first) {
                 newSubdivision::vcount++;
             }
         }
         for (int j=0;j<3;j++) {
-            pair<bool, int> result = helper::addVertexToVertexList(newSubdivision::vList, newSubdivision::vcount, evenVertices[i]);
+            pair<bool, int> result = helper::addVertexToVertexList(newSubdivision::vList, newSubdivision::vcount, evenVertices[j]);
             newVertexIndices.push_back(result.second);
             if (result.first) {
                 newSubdivision::vcount++;
@@ -584,24 +583,25 @@ void myObjType::subdivideLoop()
         
         // Add 4 triangles from using the new vertices
         Eigen::Vector3i t1(newVertexIndices[3], newVertexIndices[0], newVertexIndices[2]);
-        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t1);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, ++newSubdivision::tcount,  t1);
         Eigen::Vector3i t2(newVertexIndices[0], newVertexIndices[4], newVertexIndices[1]);
-        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t2);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, ++newSubdivision::tcount,  t2);
         Eigen::Vector3i t3(newVertexIndices[2], newVertexIndices[0], newVertexIndices[1]);
-        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t3);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, ++newSubdivision::tcount,  t3);
         Eigen::Vector3i t4(newVertexIndices[2], newVertexIndices[1], newVertexIndices[5]);
-        helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t4);
+        helper::addTriangleToTriangleList(newSubdivision::triangleList, ++newSubdivision::tcount,  t4);
     }
+    
     tcount = newSubdivision::tcount;
     vcount = newSubdivision::vcount;
     
-    for(int a = 1; a < tcount + 1; ++a) {
-        for(int b = 0; b < 3 + 1; ++b) {
+    for(int a = 1; a <= tcount; a++) {
+        for(int b = 0; b < 3 + 1; b++) {
             triangleList[a][b] = newSubdivision::triangleList[a][b];
         }
     }
-    for(int a = 1; a < vcount + 1; ++a) {
-        for(int b = 0; b < 3 + 1; ++b) {
+    for(int a = 1; a <= vcount; a++) {
+        for(int b = 0; b < 3; b++) {
             vList[a][b] = newSubdivision::vList[a][b];
         }
     }
