@@ -207,6 +207,9 @@ int main(int argc, char **argv)
 	//cout << "1-4: Draw different objects"<<endl;
 	cout << "S: Toggle Smooth Shading"<<endl;
 	cout << "H: Toggle Highlight"<<endl;
+    cout << "L: Loop Subdivision"<<endl;
+    cout << "B: Barycentric Subdivision"<<endl;
+    cout << "E: Draw Edges"<<endl;
 	cout << "W: Draw Wireframe"<<endl;
 	cout << "P: Draw Polygon"<<endl;
 	cout << "V: Draw Vertices"<<endl;

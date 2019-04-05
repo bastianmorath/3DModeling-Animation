@@ -177,15 +177,29 @@ void myObjType::readFile(const char *filename)
             }
         }
     }
+    
     initAdjacencyLists();
+    cout << "Calculate Face Normals " << endl;
+
     calculateFaceNormals();
+    cout << "Calculate Vertex Normals " << endl;
     calculateVertexNormals();
+    cout << "Calculate fNext list " << endl;
     computeFNextList();
+    std::cout << "Compute number of components..." << std::endl;
+    computeNumberOfComponents();
+    std::cout << "Orienting Triangles..." << std::endl;
+
+    orientTriangles();
+
+   
+    computeAngleStatistics();
+    cout << endl;
+
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
-    computeAngleStatistics();
-    computeNumberOfComponents();
-    orientTriangles(); // TODO: Number of faces changed
+    cout << endl;
+    
 }
 
 void myObjType::readFilePolygon(const char *filename)
@@ -272,7 +286,6 @@ void myObjType::readFilePolygon(const char *filename)
  */
 void myObjType::calculateFaceNormals()
 {
-    cout << "Calculate Face Normals " << endl;
 
     // We suggest you to compute the normals here
     for (int i = 1; i <= tcount; i++)
@@ -297,7 +310,6 @@ void myObjType::calculateFaceNormals()
  */
 void myObjType::calculateVertexNormals()
 {
-    cout << "Calculate Vertex Normals " << endl;
 
     for (int i = 1; i <= vcount; i++)
     {
@@ -435,9 +447,6 @@ void myObjType::computeAngleStatistics()
  */
 void myObjType::computeFNextList()
 {
-    // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it
-    
-    cout << "Calculate fNext list " << endl;
 
     // Hashmap created
     for (int i = 1; i <= tcount; i++)
@@ -473,8 +482,8 @@ void myObjType::computeFNextList()
  */
 void myObjType::computeNumberOfComponents()
 {
-    std::cout << "Compute number of components..." << std::endl;
-    
+    componentIDs = {};
+    numUniqueComponents = 0;
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
     while (seenIndices.size() < tcount)
@@ -499,6 +508,8 @@ namespace newSubdivision {
 
 
 void myObjType::subdivideBarycentric(){
+    std::cout << "Subdividing with Barycentric..." << std::endl;
+
     for (int i = 1; i <= tcount; i++) // For each triangle, we create 4 new triangles
     {
         std::vector<Eigen::Vector3d> newVertices;
@@ -573,13 +584,11 @@ void myObjType::subdivideBarycentric(){
     initAdjacencyLists();
   
     computeFNextList();
+    // orientTriangles()
     computeNumberOfComponents();
     calculateFaceNormals();
     calculateVertexNormals();
-    // cout << "No. of vertices: " << vcount << endl;
-    // cout << "No. of triangles: " << tcount << endl;
-    // computeAngleStatistics();
-    
+   
     newSubdivision::tcount = 0;
     newSubdivision::vcount = 0;
     subdivided = true;
@@ -590,6 +599,8 @@ void myObjType::subdivideBarycentric(){
 
 void myObjType::subdivideLoop()
 {
+    std::cout << "Subdividing with loop-subdivision..." << std::endl;
+
     
     for (int i = 1; i <= tcount; i++) // For each triangle, we create 4 new triangles
     {
@@ -676,10 +687,6 @@ void myObjType::subdivideLoop()
     calculateVertexNormals();
     computeFNextList();
     computeNumberOfComponents();
-    // orientTriangles();
-    // cout << "No. of vertices: " << vcount << endl;
-    // cout << "No. of triangles: " << tcount << endl;
-    // computeAngleStatistics();
     
     newSubdivision::tcount = 0;
     newSubdivision::vcount = 0;
@@ -692,7 +699,6 @@ void myObjType::subdivideLoop()
 
 bool myObjType::orientTriangles()
 {
-    std::cout << "Orienting Triangles..." << std::endl;
 
     std::set<int> seenIndices;
 
@@ -713,10 +719,7 @@ bool myObjType::orientTriangles()
             return false;
         }
     }
-    initAdjacencyLists();
-    computeFNextList();
-    calculateFaceNormals();
-    calculateVertexNormals();
+
     if (num_triangles_oriented == 0)
     {
         std::cout << "No triangles had to be oriented!" << std::endl;
@@ -841,7 +844,10 @@ void myObjType::drawEdges()
 void myObjType::initAdjacencyLists()
 {
     cout << "Init adjacency lists... " << endl;
-
+    adjFacesToVertex = {};
+    adjFacesToEdge = {};
+    adjVerticesToEdge = {};
+    adjVerticesToVertex = {};
     // 1. Init adjFacesToEdge, adjVerticesToVertex and adjFacesToVertex
     // For an edge given by two vertices, store the adjacent faces
     for (int i = 1; i <= tcount; i++)
