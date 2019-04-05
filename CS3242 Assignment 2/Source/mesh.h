@@ -28,6 +28,7 @@ private:
 	double lmin[3];          // the minimum coordinates of x,y,z
     
     int numUniqueComponents;
+    bool subdivided = false; // If we subdivided, we have to recompute colors etc. 
     std::map<int, int> componentIDs; // Determines the componentID for each traignle. Used for coloring
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
@@ -70,6 +71,8 @@ private:
     */
 public:
     void subdivideLoop();
+    void subdivideBarycentric();
+
     void drawEdges();
 
 };

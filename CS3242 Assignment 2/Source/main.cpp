@@ -105,9 +105,13 @@ void keyboard (unsigned char key, int x, int y)
     case 'E':
         m_edges = !m_edges;
         break;
-    case 'd':
-    case 'D':
+    case 'l':
+    case 'L':
             myObj.subdivideLoop();
+        break;
+    case 'b':
+    case 'B':
+        myObj.subdivideBarycentric();
         break;
 	case 'p':
 	case 'P':
