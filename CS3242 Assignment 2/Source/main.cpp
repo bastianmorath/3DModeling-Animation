@@ -105,6 +105,10 @@ void keyboard (unsigned char key, int x, int y)
     case 'E':
         m_edges = !m_edges;
         break;
+    case 'd':
+    case 'D':
+            myObj.subdivideLoop();
+        break;
 	case 'p':
 	case 'P':
 		glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);

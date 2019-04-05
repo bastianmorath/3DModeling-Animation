@@ -8,7 +8,7 @@
 
 #define MAXV 1000000
 #define MAXT 1000000
-
+#define EPSILON 0.000000001
 #include <stdio.h>
 #include <set>
 #include <map>
@@ -21,12 +21,15 @@ namespace helper {
     double calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2);
     std::pair<int, int> getVerticesForVersion(int triangleList[MAXT][3], const int t_triangleIndex, const int t_version);
     void findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int> > &t_v, std::set<int> &t_seenIndices, const int t_index);
-    Eigen::Vector3d getAverage(double vList[MAXV][3], int v1Idx, int v2Idx);
     
     std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v);
     void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices);
 
+    
     Eigen::Vector3d getOddLoopVertex(double vList[MAXV][3], int edgeV1, int edgeV2, int adjV1, int adjV2);
+    Eigen::Vector3d getOddLoopVertexEdge(double vList[MAXV][3], int v1Idx, int v2Idx);
+    
     Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices);
+    Eigen::Vector3d getEvenLoopVertexEdge(double vList[MAXV][3], int originalVertex, int v1Idx, int v2Idx);
 
 };

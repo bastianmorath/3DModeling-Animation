@@ -65,7 +65,7 @@ private:
     /*
         Subdivision
     */
-   
+public:
     void subdivideLoop();
     void drawEdges();
 
