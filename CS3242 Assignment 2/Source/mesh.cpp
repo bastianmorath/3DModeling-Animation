@@ -177,7 +177,6 @@ void myObjType::readFile(const char *filename)
             }
         }
     }
-
     initAdjacencyLists();
     calculateFaceNormals();
     calculateVertexNormals();
@@ -257,34 +256,37 @@ void myObjType::readFilePolygon(const char *filename)
             }
         }
     }
-    calculateFaceNormals();
-    calculateVertexNormals();
+    initAdjacencyLists();
     computeFNextList();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
     computeAngleStatistics();
     computeNumberOfComponents();
     orientTriangles(); // TODO: Number of faces changed
+    calculateFaceNormals();
+    calculateVertexNormals();
 }
 
 /**
  * @desc Calculates all face normals, using the cross product, and stores it in triangleNormalList
-*/
+ */
 void myObjType::calculateFaceNormals()
 {
+    cout << "Calculate Face Normals " << endl;
+
     // We suggest you to compute the normals here
     for (int i = 1; i <= tcount; i++)
     {
         Eigen::Vector3d v1(vList[triangleList[i][0]]);
         Eigen::Vector3d v2(vList[triangleList[i][1]]);
         Eigen::Vector3d v3(vList[triangleList[i][2]]);
-
+        
         Eigen::Vector3d v1_to_v2(v2 - v1);
         Eigen::Vector3d v1_to_v3(v3 - v1);
-
+        
         Eigen::Vector3d crossP = v1_to_v2.cross(v1_to_v3);
         crossP.normalize();
-
+        
         triangleNormalList[i][0] = crossP[0];
         triangleNormalList[i][1] = crossP[1];
         triangleNormalList[i][2] = crossP[2];
@@ -295,16 +297,14 @@ void myObjType::calculateFaceNormals()
  */
 void myObjType::calculateVertexNormals()
 {
+    cout << "Calculate Vertex Normals " << endl;
+
     for (int i = 1; i <= vcount; i++)
     {
-        std::vector<int> adjacent_triangle_indices;
-        for (int row = 1; row <= tcount; ++row)
-            for (int column = 0; column < 3; ++column)
-                if (triangleList[row][column] == i)
-                    adjacent_triangle_indices.push_back(row);
-
+        std::set<int> adjacent_triangle_indices = adjFacesToVertex[i];
+        
         Eigen::Vector3d sumVector(0, 0, 0);
-
+        
         for (auto const &j : adjacent_triangle_indices)
         {
             sumVector[0] += triangleNormalList[j][0];
@@ -312,7 +312,7 @@ void myObjType::calculateVertexNormals()
             sumVector[2] += triangleNormalList[j][2];
         }
         sumVector.normalize();
-
+        
         vertexNormalList[i][0] = sumVector[0];
         vertexNormalList[i][1] = sumVector[1];
         vertexNormalList[i][2] = sumVector[2];
@@ -323,9 +323,9 @@ int myObjType::enext(const int t_orTri)
 {
     int version = t_orTri & ((1 << 2) - 1);
     // std::cout << version << std::endl;
-
+    
     int triangleIndex = t_orTri >> 3;
-
+    
     std::map<int, int> my_map = {
         {0, 1},
         {1, 2},
@@ -333,7 +333,7 @@ int myObjType::enext(const int t_orTri)
         {3, 5},
         {4, 3},
         {5, 4}};
-
+    
     return (triangleIndex << 3) | my_map[version];
 }
 
@@ -341,7 +341,7 @@ int myObjType::sym(const int t_orTri)
 {
     int version = t_orTri & ((1 << 2) - 1);
     int triangleIndex = t_orTri >> 3;
-
+    
     std::map<int, int> my_map = {
         {0, 3},
         {1, 4},
@@ -349,7 +349,7 @@ int myObjType::sym(const int t_orTri)
         {3, 0},
         {4, 1},
         {5, 2}};
-
+    
     return (triangleIndex << 3) | my_map[version];
 }
 
@@ -357,7 +357,7 @@ int myObjType::org(const int t_orTri)
 {
     int version = t_orTri & ((1 << 2) - 1);
     int triangleIndex = t_orTri >> 3;
-
+    
     std::map<int, int> my_map = {
         {0, 0},
         {1, 1},
@@ -365,7 +365,7 @@ int myObjType::org(const int t_orTri)
         {3, 1},
         {4, 2},
         {5, 0}};
-
+    
     return triangleList[triangleIndex][my_map[version]];
 }
 
@@ -377,44 +377,44 @@ int myObjType::dest(const int t_orTri)
 // PRIVATE MEMBERS
 
 /**for(auto& elem : mymap)
-    {
-        std::vector<int> keys(elem.first.begin(), elem.first.end());
-        std::vector<int> values(elem.second.begin(), elem.second.end());
-
-        std::cout << "{" << keys[0] << ",  " << keys[1] << "}: {idx: " <<  (values[0] >> 3) << " , v: " << (values[0] & ((1 << 2) - 1) ) << " || idx: " <<  (values[1] >> 3) << " , v: " << (values[1] & ((1 << 2) - 1) ) << "}\n";
-    }
+ {
+ std::vector<int> keys(elem.first.begin(), elem.first.end());
+ std::vector<int> values(elem.second.begin(), elem.second.end());
+ 
+ std::cout << "{" << keys[0] << ",  " << keys[1] << "}: {idx: " <<  (values[0] >> 3) << " , v: " << (values[0] & ((1 << 2) - 1) ) << " || idx: " <<  (values[1] >> 3) << " , v: " << (values[1] & ((1 << 2) - 1) ) << "}\n";
+ }
  * @desc Computes the angles in all triangles and counts how many times they fall into each 10-degree angle bin
  */
 void myObjType::computeAngleStatistics()
 {
     double minAngle = 360;
     double maxAngle = 0;
-
+    
     for (int i = 1; i <= tcount; i++)
     {
         Eigen::Vector3d v1(vList[triangleList[i][0]]);
         Eigen::Vector3d v2(vList[triangleList[i][1]]);
         Eigen::Vector3d v3(vList[triangleList[i][2]]);
-
+        
         Eigen::Vector3d v1_to_v2(v2 - v1);
         Eigen::Vector3d v1_to_v3(v3 - v1);
         Eigen::Vector3d v2_to_v3(v3 - v2);
-
+        
         double angle1 = helper::calculateAngle(v1_to_v2, v1_to_v3);
-
+        
         double angle2 = helper::calculateAngle(-v1_to_v2, v2_to_v3);
         double angle3 = 180.0 - angle2 - angle1;
-
+        
         double min = std::min(std::min(angle1, angle2), angle3);
         double max = std::max(std::max(angle1, angle2), angle3);
-
+        
         statMinAngle[int(floor(min / 10))] += 1;
         statMaxAngle[int(floor(max / 10))] += 1;
-
+        
         minAngle = minAngle < min ? minAngle : min;
         maxAngle = maxAngle > max ? maxAngle : max;
     }
-
+    
     cout << "Statistics for Maximum Angles" << endl;
     for (int i = 0; i < 18; i++)
         cout << statMaxAngle[i] << " ";
@@ -423,7 +423,7 @@ void myObjType::computeAngleStatistics()
     for (int i = 0; i < 18; i++)
         cout << statMinAngle[i] << " ";
     cout << endl;
-
+    
     cout << "Min. angle = " << minAngle << endl;
     cout << "Max. angle = " << maxAngle << endl;
 }
@@ -436,18 +436,17 @@ void myObjType::computeAngleStatistics()
 void myObjType::computeFNextList()
 {
     // Create hash_map, that takes edge vertices as key, and returns the two triangles opposite of it
-
-    /*
     
-     */
+    cout << "Calculate fNext list " << endl;
+
     // Hashmap created
     for (int i = 1; i <= tcount; i++)
     {
-
+        
         for (int version = 0; version < 3; version++)
         {
             std::set<int> key = {triangleList[i][version], triangleList[i][(version + 1) % 3]};
-
+            
             std::set<int> opposite_faces = adjFacesToEdge[key];
             int face0 = *std::next(opposite_faces.begin(), 0);
             int face1 = *std::next(opposite_faces.begin(), 1);
@@ -457,10 +456,10 @@ void myObjType::computeFNextList()
             }
             
             int fnext = i == (face0 >> 3) ? face1 : face0; // Opposite face is the one that is not the current_face
-
+            
             //std::cout << "Edge: {" << triangleList[i][version] << ",  " << triangleList[i][(version + 1) % 3] <<"} -> fnext:{idx: "
-            // <<  (fnext >> 3) << " , v: " << (fnext & ((1 << 2) - 1) ) << "}\n";
-
+            //<<  (fnext >> 3) << " , v: " << (fnext & ((1 << 2) - 1) ) << "}\n";
+            
             fNextList[i][version] = fnext;
         }
     }
@@ -470,12 +469,12 @@ void myObjType::computeFNextList()
  * @desc Computes the number of components, which is defined by the number of independent surfaces, which are not shared by any triangle.
  
  For this we start at an arbitrary triangle, and traverse each adjacent triangle (using fnext and while maintaining a list of all triangles already seen) recursively, until no ones are left.
- We then do the same with a triangle that we have not yet traversed (and thus have to be in another compoennt), until no triangles are left
+ We then do the same with a triangle that we have not yet traversed (and thus have to be in another component), until no triangles are left
  */
 void myObjType::computeNumberOfComponents()
 {
-    std::cout << "Computing number of components..." << std::endl;
-
+    std::cout << "Compute number of components..." << std::endl;
+    
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
     while (seenIndices.size() < tcount)
@@ -488,7 +487,6 @@ void myObjType::computeNumberOfComponents()
     numUniqueComponents = int(v.size());
     std::cout << "Number of Components: " << v.size() << std::endl;
 }
-
 
 
 
@@ -513,7 +511,7 @@ void myObjType::subdivideBarycentric(){
             int edgeVertexIdx2 = edgeVertices.second;
             
             // 1. Compute one new edge vertex as midpoint
-
+            
             Eigen::Vector3d edgeVertex1(vList[edgeVertexIdx1][0], vList[edgeVertexIdx1][1], vList[edgeVertexIdx1][2]);
             Eigen::Vector3d edgeVertex2(vList[edgeVertexIdx2][0], vList[edgeVertexIdx2][1], vList[edgeVertexIdx2][2]);
             
@@ -526,12 +524,12 @@ void myObjType::subdivideBarycentric(){
         Eigen::Vector3d v3(vList[triangleList[i][2]][0], vList[triangleList[i][2]][1], vList[triangleList[i][2]][2]);
         
         centroid = (v1 + v2 + v3) / 3.0;
-
+        
         newVertices.push_back(v1);
         newVertices.push_back(v2);
         newVertices.push_back(v3);
         newVertices.push_back(centroid);
-
+        
         
         // 4. Rebuild mesh / Connect vertices to create new faces
         vector<int> newVertexIndices;
@@ -542,7 +540,7 @@ void myObjType::subdivideBarycentric(){
                 newSubdivision::vcount++;
             }
         }
-       
+        
         // Add 4 triangles from using the new vertices
         Eigen::Vector3i t1(newVertexIndices[6], newVertexIndices[3], newVertexIndices[0]);
         helper::addTriangleToTriangleList(newSubdivision::triangleList, newSubdivision::tcount++,  t1);
@@ -573,10 +571,11 @@ void myObjType::subdivideBarycentric(){
     }
     
     initAdjacencyLists();
-    calculateFaceNormals();
-    calculateVertexNormals();
+  
     computeFNextList();
     computeNumberOfComponents();
+    calculateFaceNormals();
+    calculateVertexNormals();
     // cout << "No. of vertices: " << vcount << endl;
     // cout << "No. of triangles: " << tcount << endl;
     // computeAngleStatistics();
@@ -677,7 +676,7 @@ void myObjType::subdivideLoop()
     calculateVertexNormals();
     computeFNextList();
     computeNumberOfComponents();
-
+    // orientTriangles();
     // cout << "No. of vertices: " << vcount << endl;
     // cout << "No. of triangles: " << tcount << endl;
     // computeAngleStatistics();
@@ -714,7 +713,7 @@ bool myObjType::orientTriangles()
             return false;
         }
     }
-    
+    initAdjacencyLists();
     computeFNextList();
     calculateFaceNormals();
     calculateVertexNormals();
@@ -841,7 +840,9 @@ void myObjType::drawEdges()
 
 void myObjType::initAdjacencyLists()
 {
-    // 1. Init adjFacesToEdge
+    cout << "Init adjacency lists... " << endl;
+
+    // 1. Init adjFacesToEdge, adjVerticesToVertex and adjFacesToVertex
     // For an edge given by two vertices, store the adjacent faces
     for (int i = 1; i <= tcount; i++)
     {
@@ -853,15 +854,31 @@ void myObjType::initAdjacencyLists()
 
         // f0
         std::set<int> key0 = {v[0], v[1]};
-        adjFacesToEdge[key0].insert(f0); //store old and new face
+        adjFacesToEdge[key0].insert(f0);
 
         // f1
         std::set<int> key1 = {v[1], v[2]};
-        adjFacesToEdge[key1].insert(f1); //store old and new face
+        adjFacesToEdge[key1].insert(f1);
 
         // f2
         std::set<int> key2 = {v[0], v[2]};
-        adjFacesToEdge[key2].insert(f2); //store old and new face
+        adjFacesToEdge[key2].insert(f2);
+        
+        // Init
+        adjVerticesToVertex[v[0]].insert(v[1]);
+        adjVerticesToVertex[v[0]].insert(v[2]);
+        
+        adjVerticesToVertex[v[1]].insert(v[0]);
+        adjVerticesToVertex[v[1]].insert(v[2]);
+        
+        adjVerticesToVertex[v[2]].insert(v[0]);
+        adjVerticesToVertex[v[2]].insert(v[1]);
+        
+        // Init
+        adjFacesToVertex[v[0]].insert(i);
+        adjFacesToVertex[v[1]].insert(i);
+        adjFacesToVertex[v[2]].insert(i);
+        
     }
 
     // 2. Init adjVerticesToEdge
@@ -884,24 +901,5 @@ void myObjType::initAdjacencyLists()
         }
         std::set_difference(vertices.begin(), vertices.end(), edgeVertices.begin(), edgeVertices.end(),
                             std::inserter(adjVerticesToEdge[edgeVertices], adjVerticesToEdge[edgeVertices].end()));
-    }
-
-    // 3. Init adjVerticesToVertex
-    // For a given vertex, store the adjacent vertices
-
-    for (int i = 1; i <= tcount; i++)
-    {
-        int idx0 = triangleList[i][0];
-        int idx1 = triangleList[i][1];
-        int idx2 = triangleList[i][2];
-
-        adjVerticesToVertex[idx0].insert(idx1);
-        adjVerticesToVertex[idx0].insert(idx2);
-
-        adjVerticesToVertex[idx1].insert(idx0);
-        adjVerticesToVertex[idx1].insert(idx2);
-
-        adjVerticesToVertex[idx2].insert(idx0);
-        adjVerticesToVertex[idx2].insert(idx1);
     }
 }
