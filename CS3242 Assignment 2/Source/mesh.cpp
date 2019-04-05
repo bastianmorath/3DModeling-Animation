@@ -36,7 +36,8 @@ void myObjType::draw(bool smooth, bool edges)
     glEnable(GL_LIGHTING);
 
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
+    glEnable(GL_COLOR_MATERIAL);
+    
     glPushMatrix();
     double longestSide = 0.0;
     for (int i = 0; i < 3; i++)
@@ -44,6 +45,18 @@ void myObjType::draw(bool smooth, bool edges)
             longestSide = (lmax[i] - lmin[i]);
     glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
     glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
+  
+    static bool initialized;
+    
+    static vector<vector<double>> colors;
+    if (!initialized) {
+        for (int c=0;c < numUniqueComponents;c++) {
+            colors.push_back({((double) rand() / (RAND_MAX)), ((double) rand() / (RAND_MAX)), ((double) rand() / (RAND_MAX))});
+        }
+        initialized = true;
+    }
+
+  
 
     if (edges)
     {
@@ -53,11 +66,14 @@ void myObjType::draw(bool smooth, bool edges)
     {
         for (int i = 1; i <= tcount; i++)
         {
+            
             if (!smooth)
             {
                 glNormal3dv(triangleNormalList[i]);
             }
             glBegin(GL_POLYGON);
+            // Color each different component with a different color
+            glColor3f(colors[componentIDs[i]][0], colors[componentIDs[i]][1], colors[componentIDs[i]][2]);
             for (int j = 0; j < 3; j++)
             {
                 if (smooth)
@@ -460,15 +476,14 @@ void myObjType::computeNumberOfComponents()
 
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
-
     while (seenIndices.size() < tcount)
     {
         set<int> s;
         v.push_back(s);
         int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
-        helper::findNeighbors(fNextList, v, seenIndices, notSeenIndex);
+        helper::findNeighbors(fNextList, v, seenIndices, notSeenIndex, componentIDs);
     }
-
+    numUniqueComponents = v.size();
     std::cout << "Number of Components: " << v.size() << std::endl;
 }
 

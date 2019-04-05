@@ -72,7 +72,8 @@ namespace helper{
      * @param set<int> &t_seenIndices - All vertices that we have traversed so far. Used to terminate recursion
      * @param int t_index - Index of triangle that we should start our search from
      */
-    void findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int>> &t_v, std::set<int> &t_seenIndices, const int t_index) {
+    void findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int>> &t_v, std::set<int> &t_seenIndices, const int t_index, std::map<int, int> &componentIDs) {
+        componentIDs.insert(make_pair(t_index, t_v.size() - 1));
         int numComponents = int(t_v.size());
         t_seenIndices.insert(t_index);
         t_v[numComponents-1].insert(t_index);
@@ -81,7 +82,7 @@ namespace helper{
             if (orTri_neighbor != 0) { // If no edge vertex
                 int neighbor_index = orTri_neighbor >> 3;
                 if (t_v[numComponents-1].find(neighbor_index) == t_v[numComponents-1].end()) { // Element not yet seen
-                    helper::findNeighbors(fNextList, t_v, t_seenIndices, neighbor_index);
+                    helper::findNeighbors(fNextList, t_v, t_seenIndices, neighbor_index, componentIDs);
                 }
             }
         }

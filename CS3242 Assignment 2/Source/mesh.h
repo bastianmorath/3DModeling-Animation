@@ -26,6 +26,9 @@ private:
     double triangleNormalList[MAXT][3];   // storing triangle normals
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
+    
+    int numUniqueComponents;
+    std::map<int, int> componentIDs; // Determines the componentID for each traignle. Used for coloring
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
     std::map<int, std::set<int>> adjVerticesToVertex; // faces adjacent to an edge given by two vertices
