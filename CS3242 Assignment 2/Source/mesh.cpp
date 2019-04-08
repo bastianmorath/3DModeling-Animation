@@ -177,6 +177,7 @@ void myObjType::readFile(const char *filename)
             }
         }
     }
+   
     
     initAdjacencyLists();
     cout << "Calculate Face Normals " << endl;
@@ -470,6 +471,14 @@ void myObjType::computeFNextList()
             //<<  (fnext >> 3) << " , v: " << (fnext & ((1 << 2) - 1) ) << "}\n";
             
             fNextList[i][version] = fnext;
+            
+           
+            if (fnext != 0) { // If no edge vertex
+                
+                adjFacesToFace[i].insert(fnext);
+            }
+            
+            
         }
     }
 }
@@ -504,12 +513,10 @@ void myObjType::computeNumberOfComponents()
                 v[numUniqueComponents].insert(idx);
                 seenIndices.insert(idx);
                 
-                for (int version=0; version <3; version++) {
-                    int orTri_neighbor = fNextList[idx][version];
-                    if (orTri_neighbor != 0) { // If no edge vertex
-                        indicesToTraverse.push(orTri_neighbor >> 3);
-                    }
+                for (auto& neighbor: adjFacesToFace[idx]) {
+                    indicesToTraverse.push(neighbor >> 3);
                 }
+               
                 
             }
         }
@@ -870,6 +877,8 @@ void myObjType::initAdjacencyLists()
     adjFacesToEdge = {};
     adjVerticesToEdge = {};
     adjVerticesToVertex = {};
+
+    
     // 1. Init adjFacesToEdge, adjVerticesToVertex and adjFacesToVertex
     // For an edge given by two vertices, store the adjacent faces
     for (int i = 1; i <= tcount; i++)
@@ -907,6 +916,8 @@ void myObjType::initAdjacencyLists()
         adjFacesToVertex[v[1]].insert(i);
         adjFacesToVertex[v[2]].insert(i);
         
+        
+     
     }
 
     // 2. Init adjVerticesToEdge

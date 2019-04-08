@@ -32,8 +32,9 @@ private:
     std::map<int, int> componentIDs; // Determines the componentID for each traignle. Used for coloring
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
-    std::map<int, std::set<int>> adjVerticesToVertex; // vertices adjacent to a vertex
-    std::map<int, std::set<int>> adjFacesToVertex; // vertices adjacent to a vertex
+    std::map<int, std::set<int>> adjVerticesToVertex; // Vertices adjacent to a vertex
+    std::map<int, std::set<int>> adjFacesToVertex; // Faces adjacent to a vertex
+    std::map<int, std::set<int>> adjFacesToFace; // Faces adjacent to a face
 
 	int statMinAngle[18];
 	int statMaxAngle[18];
