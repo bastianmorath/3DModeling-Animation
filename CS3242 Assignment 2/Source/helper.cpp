@@ -67,12 +67,16 @@ namespace helper{
     }
 
     /**
-     * @desc Finds all neighbors of a triangle
+     * @desc Finds all neighbors of a triangle up to recursion depth 30. If resursion deoth has not been achieved, this means we could traverse the entire component.
+     *       If yes, we need to rerun with another starting triangle, possible multiple times
      * @param vector<set<int>> &t_v - a vector containing a set of triangles for each different component
      * @param set<int> &t_seenIndices - All vertices that we have traversed so far. Used to terminate recursion
      * @param int t_index - Index of triangle that we should start our search from
+     * @param recDepth - Recursion depth. Prevents stack overflow
+     * @param bool - Returns whether recursion deoth has been achieved or not. If not, this means we could traverse the entire component.
      */
-    void findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int>> &t_v, std::set<int> &t_seenIndices, const int t_index, std::map<int, int> &componentIDs) {
+    bool findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int>> &t_v, std::set<int> &t_seenIndices, const int t_index, std::map<int, int> &componentIDs) {
+        // if (recDepth == 0) return true;
         componentIDs.insert(make_pair(t_index, t_v.size() - 1));
         int numComponents = int(t_v.size());
         t_seenIndices.insert(t_index);
@@ -86,7 +90,7 @@ namespace helper{
                 }
             }
         }
-        
+        return false;
     }
     
     std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v){

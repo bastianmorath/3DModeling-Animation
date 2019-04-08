@@ -477,26 +477,48 @@ void myObjType::computeFNextList()
 /**
  * @desc Computes the number of components, which is defined by the number of independent surfaces, which are not shared by any triangle.
  
- For this we start at an arbitrary triangle, and traverse each adjacent triangle (using fnext and while maintaining a list of all triangles already seen) recursively, until no ones are left.
- We then do the same with a triangle that we have not yet traversed (and thus have to be in another component), until no triangles are left
+ For this we start at an arbitrary triangle, then enqueue the neighboring triangles and pop until no one are left. All those triangles will be the ones in the same component.
+ We store every seen Index, and finish everything as soon as we have seen all indices.
  */
 void myObjType::computeNumberOfComponents()
 {
-    componentIDs = {};
     numUniqueComponents = 0;
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
+    queue<int> indicesToTraverse; // The (up to) three neighboring triangle indices that are to look at in the last loop
+
+   
+    
     while (seenIndices.size() < tcount)
     {
+        int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
+        indicesToTraverse.push(notSeenIndex);
         set<int> s;
         v.push_back(s);
-        int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
-        helper::findNeighbors(fNextList, v, seenIndices, notSeenIndex, componentIDs);
+        while(!indicesToTraverse.empty()) {
+            
+            int idx = indicesToTraverse.front();
+            indicesToTraverse.pop();
+            
+            if (seenIndices.find(idx) == seenIndices.end()) { // Not seen yet
+                v[numUniqueComponents].insert(idx);
+                seenIndices.insert(idx);
+                
+                for (int version=0; version <3; version++) {
+                    int orTri_neighbor = fNextList[idx][version];
+                    if (orTri_neighbor != 0) { // If no edge vertex
+                        indicesToTraverse.push(orTri_neighbor >> 3);
+                    }
+                }
+                
+            }
+        }
+        
+        indicesToTraverse = {};
+        numUniqueComponents++;
     }
-    numUniqueComponents = int(v.size());
-    std::cout << "Number of Components: " << v.size() << std::endl;
+    std::cout << "Number of Components: " << numUniqueComponents << std::endl;
 }
-
 
 
 namespace newSubdivision {
