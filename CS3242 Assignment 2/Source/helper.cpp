@@ -16,6 +16,7 @@
 using namespace std;
 
 namespace helper{
+    
     /**
      * @desc Finds a triangle index (from 1 to tcount) that is not in t_v. Returns the smallest one
      * @param set<int> t_v - Set of indices that have already been seen/traversed

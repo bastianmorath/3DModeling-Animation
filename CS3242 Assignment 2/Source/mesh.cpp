@@ -203,84 +203,6 @@ void myObjType::readFile(const char *filename)
     
 }
 
-void myObjType::readFilePolygon(const char *filename)
-{
-    cout << "Opening " << filename << endl;
-    ifstream inFile;
-    inFile.open(filename);
-    if (!inFile.is_open())
-    {
-        cout << "We cannot find your file " << filename << endl;
-        exit(1);
-    }
-
-    string line;
-    int i, j;
-    bool firstVertex = 1;
-    double currCood;
-
-    while (getline(inFile, line))
-    {
-        if ((line[0] == 'v' || line[0] == 'f') && line[1] == ' ')
-        {
-            if (line[0] == 'v')
-            {
-                vcount++;
-                i = 1;
-                const char *linec = line.data();
-                for (int k = 0; k < 3; k++)
-                { // k is 0,1,2 for x,y,z
-                    while (linec[i] == ' ')
-                        i++;
-                    j = i;
-                    while (linec[j] != ' ')
-                        j++;
-                    currCood = vList[vcount][k] = atof(line.substr(i, j - i).c_str());
-                    if (firstVertex)
-                        lmin[k] = lmax[k] = currCood;
-                    else
-                    {
-                        if (lmin[k] > currCood)
-                            lmin[k] = currCood;
-                        if (lmax[k] < currCood)
-                            lmax[k] = currCood;
-                    }
-                    i = j;
-                }
-
-                firstVertex = 0;
-            }
-            if (line[0] == 'f')
-            {
-                tcount++;
-                i = 1;
-                const char *linec = line.data();
-                for (int k = 0; k < 4; k++)
-                {
-                    while (linec[i] == ' ')
-                        i++;
-                    j = i;
-                    while (linec[j] != ' ' && linec[j] != '\\')
-                        j++;
-                    triangleList[tcount][k] = atof(line.substr(i, j - i).c_str());
-                    i = j;
-                    fNextList[tcount][k] = 0;
-                    while (linec[j] != ' ')
-                        j++;
-                }
-            }
-        }
-    }
-    initAdjacencyLists();
-    computeFNextList();
-    cout << "No. of vertices: " << vcount << endl;
-    cout << "No. of triangles: " << tcount << endl;
-    computeAngleStatistics();
-    computeNumberOfComponents();
-    orientTriangles(); // TODO: Number of faces changed
-    calculateFaceNormals();
-    calculateVertexNormals();
-}
 
 /**
  * @desc Calculates all face normals, using the cross product, and stores it in triangleNormalList
@@ -448,8 +370,6 @@ void myObjType::computeAngleStatistics()
  */
 void myObjType::computeFNextList()
 {
-
-    // Hashmap created
     for (int i = 1; i <= tcount; i++)
     {
         
@@ -471,14 +391,6 @@ void myObjType::computeFNextList()
             //<<  (fnext >> 3) << " , v: " << (fnext & ((1 << 2) - 1) ) << "}\n";
             
             fNextList[i][version] = fnext;
-            
-           
-            if (fnext != 0) { // If no edge vertex
-                
-                adjFacesToFace[i].insert(fnext);
-            }
-            
-            
         }
     }
 }
@@ -494,29 +406,28 @@ void myObjType::computeNumberOfComponents()
     numUniqueComponents = 0;
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
-    queue<int> indicesToTraverse; // The (up to) three neighboring triangle indices that are to look at in the last loop
-
-   
+    queue<int> indicesToTraverse; // indices of triangles still to traverse
+    int max= 0;
     
-    while (seenIndices.size() < tcount)
+    while (seenIndices.size() < tcount) // One while loop corresponds to one component
     {
         int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
         indicesToTraverse.push(notSeenIndex);
         set<int> s;
         v.push_back(s);
+        
         while(!indicesToTraverse.empty()) {
-            
             int idx = indicesToTraverse.front();
             indicesToTraverse.pop();
             
-            if (seenIndices.find(idx) == seenIndices.end()) { // Not seen yet
+            if (seenIndices.find(idx) == seenIndices.end()) { // Triangle not yet seen
+                
                 v[numUniqueComponents].insert(idx);
                 seenIndices.insert(idx);
-                
+
                 for (auto& neighbor: adjFacesToFace[idx]) {
                     indicesToTraverse.push(neighbor >> 3);
                 }
-               
                 
             }
         }
@@ -524,6 +435,7 @@ void myObjType::computeNumberOfComponents()
         indicesToTraverse = {};
         numUniqueComponents++;
     }
+
     std::cout << "Number of Components: " << numUniqueComponents << std::endl;
 }
 
@@ -725,83 +637,76 @@ void myObjType::subdivideLoop()
 }
 
 
-
-bool myObjType::orientTriangles()
-{
-
-    std::set<int> seenIndices;
-
-    bool success;
+bool myObjType::orientTriangles() {
+    set<int> seenIndices;
+    queue<int> indicesToTraverse;
     int num_triangles_oriented = 0;
-    while (seenIndices.size() < tcount)
+
+    while (seenIndices.size() < tcount) // One while loop corresponds to one component
     {
         int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
-        std::set<int> currentComponentIds = {notSeenIndex};
-        seenIndices.insert(notSeenIndex);
-        pair<bool, int> p = checkOrientationIndex(notSeenIndex, currentComponentIds, seenIndices);
-
-        success = p.first;
-        num_triangles_oriented += p.second;
-        if (!success)
-        {
-            std::cout << "Failure in orienting triangles!" << std::endl;
-            return false;
+        indicesToTraverse.push(notSeenIndex);
+        
+        while(!indicesToTraverse.empty()) {
+            int idx = indicesToTraverse.front();
+            indicesToTraverse.pop();
+            
+            seenIndices.insert(idx);
+            
+            for (int version = 0; version < 3; version++)
+            { // Check each neighbor
+                int orTri_neighbor = fNextList[idx][version];
+                if (orTri_neighbor != 0)
+                { // If no edge vertex
+                    int neighbor_index = orTri_neighbor >> 3;
+                    int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
+                    bool hasConflict = conflict(idx, version, neighbor_index, neighbor_version);
+                    if (seenIndices.find(neighbor_index) != seenIndices.end()) { // Already seen
+                        if (hasConflict)
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (hasConflict)
+                        {
+                            // Element not yet seen but conflict -> Orient it
+                            int oldValue = triangleList[neighbor_index][1];
+                            triangleList[neighbor_index][1] = triangleList[neighbor_index][2];
+                            triangleList[neighbor_index][2] = oldValue;
+                            num_triangles_oriented += 1;
+                        }
+                        indicesToTraverse.push(neighbor_index);
+                    }
+                }
+            }
         }
+        
+        indicesToTraverse = {};
     }
-
+    
+    
+    
+    
     if (num_triangles_oriented == 0)
     {
         std::cout << "No triangles had to be oriented!" << std::endl;
     }
     else
     {
+        // Since triangles had to be flipped, we need to recompute the normals and also fnext
+      
         std::cout << "Successfully oriented " << num_triangles_oriented << " triangles!" << std::endl;
+        std::cout << "Datastructures have to be recomputed..." << std::endl;
+        initAdjacencyLists();
+        calculateFaceNormals();
+        calculateVertexNormals();
+        computeFNextList();
     }
-
+    
     return true;
-}
 
-pair<bool, int> myObjType::checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices)
-{
-    int num_triangles_oriented = 0;
-    for (int version = 0; version < 3; version++)
-    { // Check each neighbor
-        int orTri_neighbor = fNextList[t_index][version];
-        int neighbor_index = orTri_neighbor >> 3;
-        if (orTri_neighbor != 0)
-        { // If no edge vertex
-
-            int neighbor_version = orTri_neighbor & ((1 << 2) - 1);
-            bool hasConflict = conflict(t_index, version, neighbor_index, neighbor_version);
-            if (t_currentComponentIds.find(neighbor_index) != t_currentComponentIds.end())
-            { // Element already seen
-                if (hasConflict)
-                {
-                    return make_pair(false, 0);
-                }
-            }
-            else
-            {
-                if (hasConflict)
-                {
-                    // Element not yet seen but conflict -> Orient it
-                    int oldValue = triangleList[neighbor_index][1];
-                    triangleList[neighbor_index][1] = triangleList[neighbor_index][2];
-                    triangleList[neighbor_index][2] = oldValue;
-                    num_triangles_oriented += 1;
-                }
-                t_currentComponentIds.insert(neighbor_index);
-                t_seenIndices.insert(neighbor_index);
-
-                pair<bool, int> p = checkOrientationIndex(neighbor_index, t_currentComponentIds, t_seenIndices);
-                if (!p.first)
-                    return make_pair(false, 0);
-                num_triangles_oriented += p.second;
-            }
-        }
-    }
-
-    return make_pair(true, num_triangles_oriented);
 }
 
 bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version)
@@ -940,5 +845,32 @@ void myObjType::initAdjacencyLists()
         }
         std::set_difference(vertices.begin(), vertices.end(), edgeVertices.begin(), edgeVertices.end(),
                             std::inserter(adjVerticesToEdge[edgeVertices], adjVerticesToEdge[edgeVertices].end()));
+    }
+    
+    // 3. Init adjFacesToFace
+    for (int i = 1; i <= tcount; i++)
+    {
+        
+        for (int version = 0; version < 3; version++)
+        {
+            std::set<int> key = {triangleList[i][version], triangleList[i][(version + 1) % 3]};
+            
+            std::set<int> opposite_faces = adjFacesToEdge[key];
+            int face0 = *std::next(opposite_faces.begin(), 0);
+            int face1 = *std::next(opposite_faces.begin(), 1);
+            // If face1 index is not <=tcount, then this is not a face, but an edge face! -> Store 0
+            if (opposite_faces.size() == 1) {
+                face1 = 0;
+            }
+            
+            int fnext = i == (face0 >> 3) ? face1 : face0; // Opposite face is the one that is not the current_face
+            
+            if (fnext != 0) { // If no edge vertex
+                
+                adjFacesToFace[i].insert(fnext);
+            }
+            
+            
+        }
     }
 }

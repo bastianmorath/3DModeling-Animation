@@ -33,8 +33,8 @@ private:
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
     std::map<int, std::set<int>> adjVerticesToVertex; // Vertices adjacent to a vertex
-    std::map<int, std::set<int>> adjFacesToVertex; // Faces adjacent to a vertex
-    std::map<int, std::set<int>> adjFacesToFace; // Faces adjacent to a face
+    std::map<int, std::set<int>> adjFacesToVertex; // Index of faces that are adjacent to a given vertex (Version is NOT endoded)
+    std::map<int, std::set<int>> adjFacesToFace; // orTri of faces that are adjacent to a given face
 
 	int statMinAngle[18];
 	int statMaxAngle[18];
@@ -57,9 +57,9 @@ private:
     /*
         Used for orienting Triangles
     */
+
     bool orientTriangles();
     bool conflict(const int t1Index, const int t1Version, const int t_t2Index, const int t_t2Version);
-    std::pair<bool, int> checkOrientationIndex(const int t_index, std::set<int> &t_currentComponentIds, std::set<int> &t_seenIndices);
 
     /*
         Used for computing fNext
