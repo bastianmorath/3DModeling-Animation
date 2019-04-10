@@ -9,7 +9,7 @@
 
 class myObjType {
 public:
-    myObjType() { vcount = 0; tcount = 0; };
+    myObjType() { vcount = 0; tcount = 0;};
     void draw(const bool t_smooth, const bool t_edges);
     void readFile(const char* filename);  // assumming file contains a manifold
     void writeFile(const char* filename);
@@ -28,7 +28,9 @@ private:
 	double lmin[3];          // the minimum coordinates of x,y,z
     
     int numUniqueComponents;
-    bool subdivided = false; // If we subdivided, we have to recompute colors etc. 
+    bool subdivided = false; // If we subdivided, we have to recompute colors etc.
+    bool edgesDrawnAfterSubdivision = true; // If we subdivided, we have to recompute colors etc.
+
     std::map<int, int> componentIDs; // Determines the componentID for each traignle. Used for coloring
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
@@ -76,7 +78,8 @@ public:
     void subdivideBarycentric();
 
     void drawEdges();
-
+    
+   
 };
 
 

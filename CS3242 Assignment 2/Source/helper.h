@@ -33,3 +33,5 @@ namespace helper {
     Eigen::Vector3d getEvenLoopVertexEdge(double vList[MAXV][3], int originalVertex, int v1Idx, int v2Idx);
 
 };
+
+

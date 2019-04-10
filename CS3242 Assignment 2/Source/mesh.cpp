@@ -25,7 +25,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <set>
-
+#include <ctime>
 #include "helper.h"
 
 using namespace std;
@@ -49,11 +49,12 @@ void myObjType::draw(bool smooth, bool edges)
     static bool initialized;
     
     static vector<vector<double>> colors;
+    
     if (!initialized || subdivided) {
-        subdivided = false;
         for (int c=0;c < numUniqueComponents;c++) {
             colors.push_back({((double) rand() / (RAND_MAX)), ((double) rand() / (RAND_MAX)), ((double) rand() / (RAND_MAX))});
         }
+        subdivided = false;
         initialized = true;
     }
 
@@ -84,7 +85,6 @@ void myObjType::draw(bool smooth, bool edges)
             glEnd();
         }
     }
-
     glDisable(GL_LIGHTING);
     glutPostRedisplay(); // So that image is not black at the beginning
 
@@ -180,6 +180,9 @@ void myObjType::readFile(const char *filename)
    
     
     initAdjacencyLists();
+    
+
+    
     cout << "Calculate Face Normals " << endl;
 
     calculateFaceNormals();
@@ -187,10 +190,15 @@ void myObjType::readFile(const char *filename)
     calculateVertexNormals();
     cout << "Calculate fNext list " << endl;
     computeFNextList();
+    
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
     std::cout << "Compute number of components..." << std::endl;
     computeNumberOfComponents();
+    
+    
     std::cout << "Orienting Triangles..." << std::endl;
-
     orientTriangles();
 
    
@@ -311,13 +319,7 @@ int myObjType::dest(const int t_orTri)
 
 // PRIVATE MEMBERS
 
-/**for(auto& elem : mymap)
- {
- std::vector<int> keys(elem.first.begin(), elem.first.end());
- std::vector<int> values(elem.second.begin(), elem.second.end());
- 
- std::cout << "{" << keys[0] << ",  " << keys[1] << "}: {idx: " <<  (values[0] >> 3) << " , v: " << (values[0] & ((1 << 2) - 1) ) << " || idx: " <<  (values[1] >> 3) << " , v: " << (values[1] & ((1 << 2) - 1) ) << "}\n";
- }
+/**
  * @desc Computes the angles in all triangles and counts how many times they fall into each 10-degree angle bin
  */
 void myObjType::computeAngleStatistics()
@@ -349,7 +351,9 @@ void myObjType::computeAngleStatistics()
         minAngle = minAngle < min ? minAngle : min;
         maxAngle = maxAngle > max ? maxAngle : max;
     }
-    
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
     cout << "Statistics for Maximum Angles" << endl;
     for (int i = 0; i < 18; i++)
         cout << statMaxAngle[i] << " ";
@@ -361,6 +365,9 @@ void myObjType::computeAngleStatistics()
     
     cout << "Min. angle = " << minAngle << endl;
     cout << "Max. angle = " << maxAngle << endl;
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
 }
 /**
  * @desc Calculates fnext
@@ -392,6 +399,8 @@ void myObjType::computeFNextList()
             
             fNextList[i][version] = fnext;
         }
+        
+         // std::cout << (triangleList[i][0]) << ", "  << (triangleList[i][1]) << ", "<< (triangleList[i][2]) << ", "<< std::endl;
     }
 }
 
@@ -407,7 +416,6 @@ void myObjType::computeNumberOfComponents()
     std::vector<set<int>> v; // bundles the triangle ids together that are in the same component
     set<int> seenIndices;
     queue<int> indicesToTraverse; // indices of triangles still to traverse
-    int max= 0;
     
     while (seenIndices.size() < tcount) // One while loop corresponds to one component
     {
@@ -419,7 +427,8 @@ void myObjType::computeNumberOfComponents()
         while(!indicesToTraverse.empty()) {
             int idx = indicesToTraverse.front();
             indicesToTraverse.pop();
-            
+            componentIDs[idx] = numUniqueComponents;
+
             if (seenIndices.find(idx) == seenIndices.end()) { // Triangle not yet seen
                 
                 v[numUniqueComponents].insert(idx);
@@ -428,15 +437,17 @@ void myObjType::computeNumberOfComponents()
                 for (auto& neighbor: adjFacesToFace[idx]) {
                     indicesToTraverse.push(neighbor >> 3);
                 }
-                
             }
         }
         
         indicesToTraverse = {};
         numUniqueComponents++;
     }
-
+   
     std::cout << "Number of Components: " << numUniqueComponents << std::endl;
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
 }
 
 
@@ -449,6 +460,9 @@ namespace newSubdivision {
 
 
 void myObjType::subdivideBarycentric(){
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
     std::cout << "Subdividing with Barycentric..." << std::endl;
 
     for (int i = 1; i <= tcount; i++) // For each triangle, we create 4 new triangles
@@ -466,7 +480,6 @@ void myObjType::subdivideBarycentric(){
             
             Eigen::Vector3d edgeVertex1(vList[edgeVertexIdx1][0], vList[edgeVertexIdx1][1], vList[edgeVertexIdx1][2]);
             Eigen::Vector3d edgeVertex2(vList[edgeVertexIdx2][0], vList[edgeVertexIdx2][1], vList[edgeVertexIdx2][2]);
-            
             newVertices.push_back((edgeVertex1 + edgeVertex2) / 2.0 );
         }
         
@@ -491,6 +504,7 @@ void myObjType::subdivideBarycentric(){
             if (result.first) {
                 newSubdivision::vcount++;
             }
+            componentIDs[result.second] = componentIDs[i];
         }
         
         // Add 4 triangles from using the new vertices
@@ -533,6 +547,12 @@ void myObjType::subdivideBarycentric(){
     newSubdivision::tcount = 0;
     newSubdivision::vcount = 0;
     subdivided = true;
+    edgesDrawnAfterSubdivision = false;
+
+    
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
     
 }
 
@@ -540,6 +560,9 @@ void myObjType::subdivideBarycentric(){
 
 void myObjType::subdivideLoop()
 {
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
     std::cout << "Subdividing with loop-subdivision..." << std::endl;
 
     
@@ -596,6 +619,8 @@ void myObjType::subdivideLoop()
             if (result.first) {
                 newSubdivision::vcount++;
             }
+            componentIDs[result.second] = componentIDs[i];
+
         }
         
         // Add 4 triangles from using the new vertices
@@ -633,6 +658,11 @@ void myObjType::subdivideLoop()
     newSubdivision::vcount = 0;
     
     subdivided = true;
+    edgesDrawnAfterSubdivision = false;
+
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "#";
+    cout << endl;
 
 }
 
@@ -641,18 +671,16 @@ bool myObjType::orientTriangles() {
     set<int> seenIndices;
     queue<int> indicesToTraverse;
     int num_triangles_oriented = 0;
-
     while (seenIndices.size() < tcount) // One while loop corresponds to one component
     {
         int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
         indicesToTraverse.push(notSeenIndex);
-        
+        seenIndices.insert(notSeenIndex);
+
         while(!indicesToTraverse.empty()) {
             int idx = indicesToTraverse.front();
             indicesToTraverse.pop();
-            
-            seenIndices.insert(idx);
-            
+
             for (int version = 0; version < 3; version++)
             { // Check each neighbor
                 int orTri_neighbor = fNextList[idx][version];
@@ -664,6 +692,8 @@ bool myObjType::orientTriangles() {
                     if (seenIndices.find(neighbor_index) != seenIndices.end()) { // Already seen
                         if (hasConflict)
                         {
+                            std::cout << "Failure in orienting triangles...!" << std::endl;
+
                             return false;
                         }
                     }
@@ -675,19 +705,28 @@ bool myObjType::orientTriangles() {
                             int oldValue = triangleList[neighbor_index][1];
                             triangleList[neighbor_index][1] = triangleList[neighbor_index][2];
                             triangleList[neighbor_index][2] = oldValue;
+                            
+                            // Also update fnext
+                            int oldValueFnext = fNextList[neighbor_index][0];
+                            fNextList[neighbor_index][0] = fNextList[neighbor_index][2];
+                            fNextList[neighbor_index][2] = oldValueFnext;
+                            
                             num_triangles_oriented += 1;
                         }
                         indicesToTraverse.push(neighbor_index);
+                        seenIndices.insert(neighbor_index);
+
                     }
                 }
             }
+
+            
         }
         
         indicesToTraverse = {};
     }
     
-    
-    
+
     
     if (num_triangles_oriented == 0)
     {
@@ -716,12 +755,14 @@ bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t
     return t1Vertices == t2Vertices;
 }
 
+
+
 void myObjType::drawEdges()
 {
     static bool initialized;
     static std::set<std::pair<int, int>> edgeVerticesSet;
 
-    if (!initialized)
+    if (!initialized || !edgesDrawnAfterSubdivision)
     {
         for (int i = 1; i <= tcount; i++)
         {
@@ -741,16 +782,12 @@ void myObjType::drawEdges()
 
     static bool stringInitialized;
     static string noEdges = "This object does not have any edges!";
+    static string edgeDrawn = "Edges drawn!";
 
-    if (!stringInitialized)
-    {
-        std::cout << noEdges << std::endl;
-        stringInitialized = true;
-    }
 
     if (edgeVerticesSet.empty())
     {
-        if (!stringInitialized)
+        if (!stringInitialized || !edgesDrawnAfterSubdivision)
         {
             std::cout << noEdges << std::endl;
             stringInitialized = true;
@@ -758,6 +795,12 @@ void myObjType::drawEdges()
     }
     else
     {
+        if (!stringInitialized || !edgesDrawnAfterSubdivision)
+        {
+            std::cout << edgeDrawn << std::endl;
+            stringInitialized = true;
+        }
+
         // Default : lighting
         glDisable(GL_LIGHTING);
 

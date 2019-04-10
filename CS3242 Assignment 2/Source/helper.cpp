@@ -169,3 +169,7 @@ namespace helper{
         return 3.0 / 4 * vOrig + 1./8 * (v1 + v2);
     }
 }
+
+
+// ConsoleColor -> Adds colors to the std::cout. Taken from https://www.codeproject.com/articles/16431/add-color-to-your-std-cout
+
