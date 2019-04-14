@@ -67,37 +67,13 @@ namespace helper{
         return std::make_pair(v0, v1);
     }
 
-    /**
-     * @desc Finds all neighbors of a triangle up to recursion depth 30. If resursion deoth has not been achieved, this means we could traverse the entire component.
-     *       If yes, we need to rerun with another starting triangle, possible multiple times
-     * @param vector<set<int>> &t_v - a vector containing a set of triangles for each different component
-     * @param set<int> &t_seenIndices - All vertices that we have traversed so far. Used to terminate recursion
-     * @param int t_index - Index of triangle that we should start our search from
-     * @param recDepth - Recursion depth. Prevents stack overflow
-     * @param bool - Returns whether recursion deoth has been achieved or not. If not, this means we could traverse the entire component.
-     */
-    bool findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int>> &t_v, std::set<int> &t_seenIndices, const int t_index, std::map<int, int> &componentIDs) {
-        // if (recDepth == 0) return true;
-        componentIDs.insert(make_pair(t_index, t_v.size() - 1));
-        int numComponents = int(t_v.size());
-        t_seenIndices.insert(t_index);
-        t_v[numComponents-1].insert(t_index);
-        for (int version=0; version <3; version++) {
-            int orTri_neighbor = fNextList[t_index][version];
-            if (orTri_neighbor != 0) { // If no edge vertex
-                int neighbor_index = orTri_neighbor >> 3;
-                if (t_v[numComponents-1].find(neighbor_index) == t_v[numComponents-1].end()) { // Element not yet seen
-                    helper::findNeighbors(fNextList, t_v, t_seenIndices, neighbor_index, componentIDs);
-                }
-            }
-        }
-        return false;
-    }
-    
+ 
     std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v){
         
         for (int i=1; i<= vcount;i++){
-            if (std::fabs(vList[i][0]-v[0]) < EPSILON   && std::fabs(vList[i][1]-v[1]) < EPSILON && std::fabs(vList[i][2]-v[2]) < EPSILON) return make_pair(false, i); // Vertex already stored
+            //if (std::fabs(vList[i][0]-v[0]) < EPSILON   && std::fabs(vList[i][1]-v[1]) < EPSILON && std::fabs(vList[i][2]-v[2]) < EPSILON
+            if (vList[i][0] == v[0]  &&  vList[i][1] == v[1]  && vList[i][2] == v[2])
+                return make_pair(false, i); // Vertex already stored
         }
         vList[vcount+1][0] = v[0];
         vList[vcount+1][1] = v[1];
@@ -147,7 +123,7 @@ namespace helper{
             beta = 3. / 16;
         } else {
             beta = 3.0 / 8 / n;
-            beta = 1. / n * (5./8 - pow(3./8 + 1./4 * cos(2.*M_PI / n), 2));
+            // beta = 1. / n * (5./8 - pow(3./8 + 1./4 * cos(2.*M_PI / n), 2));
         }
         Eigen::Vector3d sum(0.0, 0.0, 0.0);
         for (auto& vecIdx: neighboringVerticesIndices) {
@@ -169,7 +145,4 @@ namespace helper{
         return 3.0 / 4 * vOrig + 1./8 * (v1 + v2);
     }
 }
-
-
-// ConsoleColor -> Adds colors to the std::cout. Taken from https://www.codeproject.com/articles/16431/add-color-to-your-std-cout
 

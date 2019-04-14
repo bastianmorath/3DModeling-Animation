@@ -30,6 +30,7 @@ myObjType myObj;
 bool m_Smooth = FALSE;
 bool m_edges = FALSE;
 bool m_Highlight = FALSE;
+bool m_color_components = FALSE;
 GLfloat angle = 0;   /* in degrees */
 GLfloat angle2 = 0;   /* in degrees */
 GLfloat zoom = 1.0;
@@ -77,11 +78,12 @@ void display(void)
 	float mat_ambient_color[] = { 0.8f, 0.8f, 0.2f, 1.0f };
 	float mat_diffuse[] = { 0.1f, 0.5f, 0.8f, 1.0f };
 	float shininess = 20;
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+	// glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+    
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPushMatrix();
@@ -89,7 +91,7 @@ void display(void)
 		glRotatef(angle2, 1.0, 0.0, 0.0);
 		glRotatef(angle, 0.0, 1.0, 0.0);
 		glScalef(zoom, zoom, zoom);
-		myObj.draw(m_Smooth, m_edges);
+		myObj.draw(m_Smooth, m_edges, m_color_components);
 	glPopMatrix();
 	glutSwapBuffers ();
 }
@@ -104,6 +106,10 @@ void keyboard (unsigned char key, int x, int y)
     case 'e':
     case 'E':
         m_edges = !m_edges;
+        break;
+    case 'c':
+    case 'C':
+        m_color_components = !m_color_components;
         break;
     case 'l':
     case 'L':
@@ -208,6 +214,7 @@ int main(int argc, char **argv)
 	cout << "S: Toggle Smooth Shading"<<endl;
 	cout << "H: Toggle Highlight"<<endl;
     cout << "L: Loop Subdivision"<<endl;
+    cout << "C: Color Components" << endl;
     cout << "B: Barycentric Subdivision"<<endl;
     cout << "E: Draw Edges"<<endl;
 	cout << "W: Draw Wireframe"<<endl;

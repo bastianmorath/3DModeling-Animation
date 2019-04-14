@@ -10,7 +10,7 @@
 class myObjType {
 public:
     myObjType() { vcount = 0; tcount = 0;};
-    void draw(const bool t_smooth, const bool t_edges);
+    void draw(const bool t_smooth, const bool t_edges, const bool t_color_components);
     void readFile(const char* filename);  // assumming file contains a manifold
     void writeFile(const char* filename);
     void readFilePolygon(const char* filename);
@@ -77,7 +77,7 @@ public:
     void subdivideLoop();
     void subdivideBarycentric();
 
-    void drawEdges();
+    bool drawEdges();
     
    
 };

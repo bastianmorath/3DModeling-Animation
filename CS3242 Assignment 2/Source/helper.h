@@ -20,7 +20,7 @@ namespace helper {
     int getIndexNotYetSeen(int tcount, const std::set<int> t_v);
     double calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2);
     std::pair<int, int> getVerticesForVersion(int triangleList[MAXT][3], const int t_triangleIndex, const int t_version);
-    bool findNeighbors(int fNextList[MAXT][3], std::vector<std::set<int> > &t_v, std::set<int> &t_seenIndices, const int t_index, std::map<int, int> &componentIDs);
+   
     
     std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v);
     void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices);

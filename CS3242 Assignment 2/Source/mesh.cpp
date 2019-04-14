@@ -30,11 +30,11 @@
 
 using namespace std;
 
-void myObjType::draw(bool smooth, bool edges)
+void myObjType::draw(bool smooth, bool edges, bool t_color_components)
 {
-
+    
     glEnable(GL_LIGHTING);
-
+    
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     glEnable(GL_COLOR_MATERIAL);
     
@@ -45,10 +45,11 @@ void myObjType::draw(bool smooth, bool edges)
             longestSide = (lmax[i] - lmin[i]);
     glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
     glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
-  
+    
     static bool initialized;
     
     static vector<vector<double>> colors;
+    bool hasEdges = edges ? drawEdges() : false;
     
     if (!initialized || subdivided) {
         for (int c=0;c < numUniqueComponents;c++) {
@@ -57,8 +58,8 @@ void myObjType::draw(bool smooth, bool edges)
         subdivided = false;
         initialized = true;
     }
-
-    if (edges)
+    
+    if (hasEdges)
     {
         drawEdges();
     }
@@ -67,13 +68,19 @@ void myObjType::draw(bool smooth, bool edges)
         for (int i = 1; i <= tcount; i++)
         {
             
+            
+            glBegin(GL_POLYGON);
             if (!smooth)
             {
                 glNormal3dv(triangleNormalList[i]);
             }
-            glBegin(GL_POLYGON);
             // Color each different component with a different color
-            glColor3f(colors[componentIDs[i]][0], colors[componentIDs[i]][1], colors[componentIDs[i]][2]);
+            if (t_color_components) {
+                glColor3f(colors[componentIDs[i]][0], colors[componentIDs[i]][1], colors[componentIDs[i]][2]);
+            } else {
+                glColor3f(0.3, 0.3, 0.3);
+            }
+            
             for (int j = 0; j < 3; j++)
             {
                 if (smooth)
@@ -87,7 +94,7 @@ void myObjType::draw(bool smooth, bool edges)
     }
     glDisable(GL_LIGHTING);
     glutPostRedisplay(); // So that image is not black at the beginning
-
+    
     glPopMatrix();
 }
 
@@ -105,7 +112,7 @@ void myObjType::writeFile(const char *filename)
     
     std::ofstream outfile(filename);
     outfile << lines.str() << std::endl;
-
+    
     outfile.close();
 }
 
@@ -119,12 +126,12 @@ void myObjType::readFile(const char *filename)
         cout << "We cannot find your file " << filename << endl;
         exit(1);
     }
-
+    
     string line;
     int i, j;
     bool firstVertex = 1;
     double currCood;
-
+    
     while (getline(inFile, line))
     {
         if ((line[0] == 'v' || line[0] == 'f') && line[1] == ' ')
@@ -153,7 +160,7 @@ void myObjType::readFile(const char *filename)
                     }
                     i = j;
                 }
-
+                
                 firstVertex = 0;
             }
             if (line[0] == 'f')
@@ -177,14 +184,14 @@ void myObjType::readFile(const char *filename)
             }
         }
     }
-   
+    
     
     initAdjacencyLists();
     
-
+    
     
     cout << "Calculate Face Normals " << endl;
-
+    
     calculateFaceNormals();
     cout << "Calculate Vertex Normals " << endl;
     calculateVertexNormals();
@@ -200,11 +207,10 @@ void myObjType::readFile(const char *filename)
     
     std::cout << "Orienting Triangles..." << std::endl;
     orientTriangles();
-
-   
+    
     computeAngleStatistics();
     cout << endl;
-
+    
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
     cout << endl;
@@ -217,7 +223,7 @@ void myObjType::readFile(const char *filename)
  */
 void myObjType::calculateFaceNormals()
 {
-
+    
     // We suggest you to compute the normals here
     for (int i = 1; i <= tcount; i++)
     {
@@ -241,7 +247,7 @@ void myObjType::calculateFaceNormals()
  */
 void myObjType::calculateVertexNormals()
 {
-
+    
     for (int i = 1; i <= vcount; i++)
     {
         std::set<int> adjacent_triangle_indices = adjFacesToVertex[i];
@@ -400,7 +406,7 @@ void myObjType::computeFNextList()
             fNextList[i][version] = fnext;
         }
         
-         // std::cout << (triangleList[i][0]) << ", "  << (triangleList[i][1]) << ", "<< (triangleList[i][2]) << ", "<< std::endl;
+        // std::cout << (triangleList[i][0]) << ", "  << (triangleList[i][1]) << ", "<< (triangleList[i][2]) << ", "<< std::endl;
     }
 }
 
@@ -428,12 +434,12 @@ void myObjType::computeNumberOfComponents()
             int idx = indicesToTraverse.front();
             indicesToTraverse.pop();
             componentIDs[idx] = numUniqueComponents;
-
+            
             if (seenIndices.find(idx) == seenIndices.end()) { // Triangle not yet seen
                 
                 v[numUniqueComponents].insert(idx);
                 seenIndices.insert(idx);
-
+                
                 for (auto& neighbor: adjFacesToFace[idx]) {
                     indicesToTraverse.push(neighbor >> 3);
                 }
@@ -443,7 +449,7 @@ void myObjType::computeNumberOfComponents()
         indicesToTraverse = {};
         numUniqueComponents++;
     }
-   
+    
     std::cout << "Number of Components: " << numUniqueComponents << std::endl;
     cout << endl;
     for( int i=0; i< 50; i++) cout << "#";
@@ -464,19 +470,17 @@ void myObjType::subdivideBarycentric(){
     for( int i=0; i< 50; i++) cout << "#";
     cout << endl;
     std::cout << "Subdividing with Barycentric..." << std::endl;
-
+    
     for (int i = 1; i <= tcount; i++) // For each triangle, we create 4 new triangles
     {
         std::vector<Eigen::Vector3d> newVertices;
-        Eigen::Vector3d centroid;
         
         for (int version = 0; version < 3; version++) // Iterate over each pair of edge vertices
         {
-            std::pair<int, int> edgeVertices = std::make_pair(triangleList[i][version], triangleList[i][(version + 1) % 3]);
-            int edgeVertexIdx1 = edgeVertices.first;
-            int edgeVertexIdx2 = edgeVertices.second;
+            int edgeVertexIdx1 = triangleList[i][version];
+            int edgeVertexIdx2 = triangleList[i][(version + 1) % 3];
             
-            // 1. Compute one new edge vertex as midpoint
+            // 1. Compute one new edge vertex as midpoint of edge
             
             Eigen::Vector3d edgeVertex1(vList[edgeVertexIdx1][0], vList[edgeVertexIdx1][1], vList[edgeVertexIdx1][2]);
             Eigen::Vector3d edgeVertex2(vList[edgeVertexIdx2][0], vList[edgeVertexIdx2][1], vList[edgeVertexIdx2][2]);
@@ -488,7 +492,7 @@ void myObjType::subdivideBarycentric(){
         Eigen::Vector3d v2(vList[triangleList[i][1]][0], vList[triangleList[i][1]][1], vList[triangleList[i][1]][2]);
         Eigen::Vector3d v3(vList[triangleList[i][2]][0], vList[triangleList[i][2]][1], vList[triangleList[i][2]][2]);
         
-        centroid = (v1 + v2 + v3) / 3.0;
+        Eigen::Vector3d centroid = (v1 + v2 + v3) / 3.0;
         
         newVertices.push_back(v1);
         newVertices.push_back(v2);
@@ -525,30 +529,33 @@ void myObjType::subdivideBarycentric(){
     tcount = newSubdivision::tcount;
     vcount = newSubdivision::vcount;
     
+    std::copy(&newSubdivision::triangleList[0][0], &newSubdivision::triangleList[0][0]+tcount*3 + 3,&triangleList[0][0]);
+    std::copy(&newSubdivision::vList[0][0], &newSubdivision::vList[0][0]+vcount*3 +3,&vList[0][0]);
+    
     for(int a = 1; a <= tcount; a++) {
         for(int b = 0; b < 3 + 1; b++) {
-            triangleList[a][b] = newSubdivision::triangleList[a][b];
+            newSubdivision::triangleList[a][b] = -1;
         }
     }
     for(int a = 1; a <= vcount; a++) {
         for(int b = 0; b < 3; b++) {
-            vList[a][b] = newSubdivision::vList[a][b];
+            newSubdivision::vList[a][b] = -1;
         }
     }
     
+    cout << "Subdivision completed... Recalculating data structures, normals etc. " << endl;
+
     initAdjacencyLists();
-  
-    computeFNextList();
-    // orientTriangles()
-    computeNumberOfComponents();
     calculateFaceNormals();
     calculateVertexNormals();
-   
+    computeFNextList();
+    computeNumberOfComponents();
     newSubdivision::tcount = 0;
     newSubdivision::vcount = 0;
+    
     subdivided = true;
     edgesDrawnAfterSubdivision = false;
-
+    
     
     cout << endl;
     for( int i=0; i< 50; i++) cout << "#";
@@ -564,7 +571,7 @@ void myObjType::subdivideLoop()
     for( int i=0; i< 50; i++) cout << "#";
     cout << endl;
     std::cout << "Subdividing with loop-subdivision..." << std::endl;
-
+    
     
     for (int i = 1; i <= tcount; i++) // For each triangle, we create 4 new triangles
     {
@@ -578,7 +585,7 @@ void myObjType::subdivideLoop()
             int edgeVertexIdx2 = edgeVertices.second;
             
             std::set<int> adjacentEdgeVertices = adjVerticesToEdge[{triangleList[i][version], triangleList[i][(version + 1) % 3]}];
-           
+            
             
             // 2. Compute one new odd vertex from the two edge vertices
             Eigen::Vector3d average;
@@ -620,7 +627,7 @@ void myObjType::subdivideLoop()
                 newSubdivision::vcount++;
             }
             componentIDs[result.second] = componentIDs[i];
-
+            
         }
         
         // Add 4 triangles from using the new vertices
@@ -638,16 +645,21 @@ void myObjType::subdivideLoop()
     vcount = newSubdivision::vcount;
     
     for(int a = 1; a <= tcount; a++) {
-        for(int b = 0; b < 3 + 1; b++) {
+        for(int b = 0; b < 3; b++) {
             triangleList[a][b] = newSubdivision::triangleList[a][b];
+            newSubdivision::triangleList[a][b] = -1; // Clear it
+
         }
     }
     for(int a = 1; a <= vcount; a++) {
         for(int b = 0; b < 3; b++) {
             vList[a][b] = newSubdivision::vList[a][b];
+            newSubdivision::vList[a][b] = -1; // Clear it
+
         }
     }
-    
+    cout << "Subdivision completed... Recalculating data structures, normals etc. " << endl;
+
     initAdjacencyLists();
     calculateFaceNormals();
     calculateVertexNormals();
@@ -659,11 +671,11 @@ void myObjType::subdivideLoop()
     
     subdivided = true;
     edgesDrawnAfterSubdivision = false;
-
+    
     cout << endl;
     for( int i=0; i< 50; i++) cout << "#";
     cout << endl;
-
+    
 }
 
 
@@ -676,11 +688,11 @@ bool myObjType::orientTriangles() {
         int notSeenIndex = helper::getIndexNotYetSeen(tcount, seenIndices);
         indicesToTraverse.push(notSeenIndex);
         seenIndices.insert(notSeenIndex);
-
+        
         while(!indicesToTraverse.empty()) {
             int idx = indicesToTraverse.front();
             indicesToTraverse.pop();
-
+            
             for (int version = 0; version < 3; version++)
             { // Check each neighbor
                 int orTri_neighbor = fNextList[idx][version];
@@ -693,7 +705,7 @@ bool myObjType::orientTriangles() {
                         if (hasConflict)
                         {
                             std::cout << "Failure in orienting triangles...!" << std::endl;
-
+                            
                             return false;
                         }
                     }
@@ -715,18 +727,18 @@ bool myObjType::orientTriangles() {
                         }
                         indicesToTraverse.push(neighbor_index);
                         seenIndices.insert(neighbor_index);
-
+                        
                     }
                 }
             }
-
+            
             
         }
         
         indicesToTraverse = {};
     }
     
-
+    
     
     if (num_triangles_oriented == 0)
     {
@@ -735,7 +747,7 @@ bool myObjType::orientTriangles() {
     else
     {
         // Since triangles had to be flipped, we need to recompute the normals and also fnext
-      
+        
         std::cout << "Successfully oriented " << num_triangles_oriented << " triangles!" << std::endl;
         std::cout << "Datastructures have to be recomputed..." << std::endl;
         initAdjacencyLists();
@@ -745,7 +757,7 @@ bool myObjType::orientTriangles() {
     }
     
     return true;
-
+    
 }
 
 bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version)
@@ -757,11 +769,11 @@ bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t
 
 
 
-void myObjType::drawEdges()
+bool myObjType::drawEdges()
 {
     static bool initialized;
     static std::set<std::pair<int, int>> edgeVerticesSet;
-
+    
     if (!initialized || !edgesDrawnAfterSubdivision)
     {
         for (int i = 1; i <= tcount; i++)
@@ -779,18 +791,20 @@ void myObjType::drawEdges()
         }
         initialized = true;
     }
-
+    
     static bool stringInitialized;
     static string noEdges = "This object does not have any edges!";
     static string edgeDrawn = "Edges drawn!";
-
-
+    
+    
     if (edgeVerticesSet.empty())
     {
         if (!stringInitialized || !edgesDrawnAfterSubdivision)
         {
             std::cout << noEdges << std::endl;
             stringInitialized = true;
+            edgesDrawnAfterSubdivision = true;
+            return false;
         }
     }
     else
@@ -798,12 +812,14 @@ void myObjType::drawEdges()
         if (!stringInitialized || !edgesDrawnAfterSubdivision)
         {
             std::cout << edgeDrawn << std::endl;
+            edgesDrawnAfterSubdivision = true;
+            
             stringInitialized = true;
         }
-
+        
         // Default : lighting
         glDisable(GL_LIGHTING);
-
+        
         for (auto &edge : edgeVerticesSet)
         {
             glBegin(GL_LINES);
@@ -812,9 +828,10 @@ void myObjType::drawEdges()
             glVertex3dv(vList[edge.second]);
             glEnd();
         }
-
+        
         // Default : lighting
         glEnable(GL_LIGHTING);
+        return true;
     }
 }
 
@@ -825,30 +842,33 @@ void myObjType::initAdjacencyLists()
     adjFacesToEdge = {};
     adjVerticesToEdge = {};
     adjVerticesToVertex = {};
-
+    
     
     // 1. Init adjFacesToEdge, adjVerticesToVertex and adjFacesToVertex
     // For an edge given by two vertices, store the adjacent faces
     for (int i = 1; i <= tcount; i++)
     {
         Eigen::Vector3i v(triangleList[i][0], triangleList[i][1], triangleList[i][2]);
-
+        
         int f0 = i << 3 | 0;
         int f1 = i << 3 | 1;
         int f2 = i << 3 | 2;
-
+        
         // f0
         std::set<int> key0 = {v[0], v[1]};
         adjFacesToEdge[key0].insert(f0);
+        adjVerticesToEdge[key0].insert(v[2]);
 
         // f1
         std::set<int> key1 = {v[1], v[2]};
         adjFacesToEdge[key1].insert(f1);
+        adjVerticesToEdge[key1].insert(v[0]);
 
         // f2
         std::set<int> key2 = {v[0], v[2]};
         adjFacesToEdge[key2].insert(f2);
-        
+        adjVerticesToEdge[key2].insert(v[1]);
+
         // Init
         adjVerticesToVertex[v[0]].insert(v[1]);
         adjVerticesToVertex[v[0]].insert(v[2]);
@@ -865,32 +885,11 @@ void myObjType::initAdjacencyLists()
         adjFacesToVertex[v[2]].insert(i);
         
         
-     
-    }
-
-    // 2. Init adjVerticesToEdge
-    // For an edge given by two vertices, store the adjacent one or two vertices
-    for (auto &elem : adjFacesToEdge)
-    {
-        std::set<int> edgeVertices(elem.first.begin(), elem.first.end());
-        std::set<int> orTriFaces(elem.second.begin(), elem.second.end());
-
-        std::set<int> vertices;
-        for (auto &faceIdx : orTriFaces)
-        {
-            int idx = faceIdx >> 3;
-            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 0).first);
-            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 0).second);
-            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 1).first);
-            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 1).second);
-            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 2).first);
-            vertices.insert(helper::getVerticesForVersion(triangleList, idx, 2).second);
-        }
-        std::set_difference(vertices.begin(), vertices.end(), edgeVertices.begin(), edgeVertices.end(),
-                            std::inserter(adjVerticesToEdge[edgeVertices], adjVerticesToEdge[edgeVertices].end()));
+        
     }
     
-    // 3. Init adjFacesToFace
+  
+    // 2. Init adjFacesToFace
     for (int i = 1; i <= tcount; i++)
     {
         
@@ -912,8 +911,6 @@ void myObjType::initAdjacencyLists()
                 
                 adjFacesToFace[i].insert(fnext);
             }
-            
-            
         }
     }
 }
