@@ -206,7 +206,9 @@ int main(int argc, char **argv)
 
 	cout << "Enter the filename you want to open:";
 	cin >> filename;
-	myObj.readFile(filename);
+    myObj.readFile(filename);
+
+	//myObj.readFile("teapot.obj");
 
 
 

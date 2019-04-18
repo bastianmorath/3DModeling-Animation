@@ -49,7 +49,7 @@ void myObjType::draw(bool smooth, bool edges, bool t_color_components)
     static bool initialized;
     
     static vector<vector<double>> colors;
-    bool hasEdges = edges ? drawEdges() : false;
+    // bool hasEdges = edges ? drawEdges() : false;
     
     if (!initialized || subdivided) {
         for (int c=0;c < numUniqueComponents;c++) {
@@ -59,39 +59,59 @@ void myObjType::draw(bool smooth, bool edges, bool t_color_components)
         initialized = true;
     }
     
-    if (hasEdges)
+    // Make sure that those strings only get printed once (since this draw() method gets called every frame...)
+    static bool stringInitialized;
+    static string noEdges = "This object does not have any edges!";
+    static string edgeDrawn = "Edges drawn!";
+    
+        
+    if (edges && objectHasEdges())
     {
         drawEdges();
-    }
-    else
-    {
-        for (int i = 1; i <= tcount; i++)
+        glDisable(GL_LIGHTING);
+        glPopMatrix();
+        if (!stringInitialized || !edgesDrawnAfterSubdivision)
         {
-            
-            
-            glBegin(GL_POLYGON);
-            if (!smooth)
-            {
-                glNormal3dv(triangleNormalList[i]);
-            }
-            // Color each different component with a different color
-            if (t_color_components) {
-                glColor3f(colors[componentIDs[i]][0], colors[componentIDs[i]][1], colors[componentIDs[i]][2]);
-            } else {
-                glColor3f(0.3, 0.3, 0.3);
-            }
-            
-            for (int j = 0; j < 3; j++)
-            {
-                if (smooth)
-                {
-                    glNormal3dv(vertexNormalList[triangleList[i][j]]);
-                }
-                glVertex3dv(vList[triangleList[i][j]]);
-            }
-            glEnd();
+            std::cout << edgeDrawn << std::endl;
+            edgesDrawnAfterSubdivision = true;
+            stringInitialized = true;
+        }
+        return;
+    } else if (edges && !objectHasEdges()) {
+        
+        if (!stringInitialized || !edgesDrawnAfterSubdivision)
+        {
+            std::cout << noEdges << std::endl;
+            stringInitialized = true;
+            edgesDrawnAfterSubdivision = true;
         }
     }
+    
+    for (int i = 1; i <= tcount; i++)
+    {
+        glBegin(GL_POLYGON);
+        if (!smooth)
+        {
+            glNormal3dv(triangleNormalList[i]);
+        }
+        // Color each different component with a different color
+        if (t_color_components) {
+            glColor3f(colors[componentIDs[i]][0], colors[componentIDs[i]][1], colors[componentIDs[i]][2]);
+        } else {
+            glColor3f(0.3, 0.3, 0.3);
+        }
+        
+        for (int j = 0; j < 3; j++)
+        {
+            if (smooth)
+            {
+                glNormal3dv(vertexNormalList[triangleList[i][j]]);
+            }
+            glVertex3dv(vList[triangleList[i][j]]);
+        }
+        glEnd();
+    }
+
     glDisable(GL_LIGHTING);
     glutPostRedisplay(); // So that image is not black at the beginning
     
@@ -767,8 +787,48 @@ bool myObjType::conflict(const int t_t1Index, const int t_t1Version, const int t
     return t1Vertices == t2Vertices;
 }
 
+void myObjType::drawEdges()
+{
+    glDisable(GL_LIGHTING);
+    for (int i = 1; i <= tcount; i++)
+    {
+        // Check each triangle
+        for (int version = 0; version < 3; version++)
+        {
+            int orTri_neighbor = fNextList[i][version];
+            if (orTri_neighbor == 0)
+            { // Edge vertices!
+                pair<int, int> edgeVertices = helper::getVerticesForVersion(triangleList, i, version);
+                glBegin(GL_LINES);
+                glColor3f(1.0f, 0.0f, 0.0f); // make this vertex red
+                glVertex3dv(vList[edgeVertices.first]);
+                glVertex3dv(vList[edgeVertices.second]);
+                glEnd();
+            }
+        }
+    }
+   
+}
 
-
+bool myObjType::objectHasEdges() {
+    std::set<std::pair<int, int>> edgeVerticesSet;
+    
+    for (int i = 1; i <= tcount; i++)
+    {
+        // Check each triangle
+        for (int version = 0; version < 3; version++)
+        {
+            int orTri_neighbor = fNextList[i][version];
+            if (orTri_neighbor == 0)
+            { // Edge vertices!
+                pair<int, int> edgeVertices = helper::getVerticesForVersion(triangleList, i, version);
+                edgeVerticesSet.insert(make_pair(edgeVertices.first, edgeVertices.second));
+            }
+        }
+    }
+    return !edgeVerticesSet.empty();
+}
+/*
 bool myObjType::drawEdges()
 {
     static bool initialized;
@@ -834,7 +894,7 @@ bool myObjType::drawEdges()
         return true;
     }
 }
-
+*/
 void myObjType::initAdjacencyLists()
 {
     cout << "Init adjacency lists... " << endl;

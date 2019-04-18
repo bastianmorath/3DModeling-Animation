@@ -69,6 +69,7 @@ private:
     void computeFNextList();
     void changeNeighbors(std::vector<int> t_previous_indices, const int t_currentIndex, std::vector<int> t_triangle_ids);
 
+    bool objectHasEdges();
 
     /*
         Subdivision
@@ -77,8 +78,8 @@ public:
     void subdivideLoop();
     void subdivideBarycentric();
 
-    bool drawEdges();
-    
+    void drawEdges();
+
    
 };
 
