@@ -173,10 +173,10 @@ void keyboard (unsigned char key, int x, int y)
         myObj.readFile("smallcaseflipped.obj");
         break;
     case '5':
-        myObj.readFile("2cubes_oriented_edge.obj");
+        myObj.readFile("2cubes_orient_edge.obj");
         break;
     case '6':
-        myObj.readFile("cubes.obj");
+        myObj.readFile("twocubes.obj");
         break;
     case '7':
         myObj.readFile("face.obj");
@@ -249,9 +249,6 @@ int main(int argc, char **argv)
 	cout << "W: Draw Wireframe"<<endl;
 	cout << "P: Draw Polygon"<<endl;
 	cout << "V: Draw Vertices"<<endl;
-    cout << "Left Arrow: Iterate one left in the list of objects"<<endl;
-    cout << "Right Arrow:  Iterate one right in the list of objects"<<endl;
-
 	cout << "Q: Quit" <<endl<< endl;
 
 	cout << "Left mouse click and drag: rotate the object"<<endl;

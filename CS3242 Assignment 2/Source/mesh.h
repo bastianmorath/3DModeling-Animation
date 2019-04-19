@@ -51,7 +51,7 @@ private:
     */
 
     void initAdjacencyLists();
-    void computeAngleStatistics();
+    void computeStatistics();
     void calculateFaceNormals();
     void calculateVertexNormals();
     void computeNumberOfComponents();

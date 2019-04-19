@@ -140,6 +140,9 @@ void myObjType::readFile(const char *filename)
 {
     vcount = 0;
     tcount = 0;
+    cout << endl;
+    for( int i=0; i< 50; i++) cout << "_";
+    cout << endl;
     cout << "Opening " << filename << endl;
     ifstream inFile;
     inFile.open(filename);
@@ -225,16 +228,11 @@ void myObjType::readFile(const char *filename)
     cout << endl;
     std::cout << "Compute number of components..." << std::endl;
     computeNumberOfComponents();
-    
-   
-    
-    computeAngleStatistics();
+
+    computeStatistics();
     cout << endl;
-    
-    cout << "No. of vertices: " << vcount << endl;
-    cout << "No. of triangles: " << tcount << endl;
+    for( int i=0; i< 50; i++) cout << "_";
     cout << endl;
-    
 }
 
 
@@ -348,7 +346,7 @@ int myObjType::dest(const int t_orTri)
 /**
  * @desc Computes the angles in all triangles and counts how many times they fall into each 10-degree angle bin
  */
-void myObjType::computeAngleStatistics()
+void myObjType::computeStatistics()
 {
     double minAngle = 360;
     double maxAngle = 0;
@@ -391,9 +389,16 @@ void myObjType::computeAngleStatistics()
     
     cout << "Min. angle = " << minAngle << endl;
     cout << "Max. angle = " << maxAngle << endl;
+    
+    cout << endl;
+    
+    cout << "No. of vertices: " << vcount << endl;
+    cout << "No. of triangles: " << tcount << endl;
+    
     cout << endl;
     for( int i=0; i< 50; i++) cout << "#";
     cout << endl;
+   
 }
 
 
@@ -437,9 +442,7 @@ void myObjType::computeNumberOfComponents()
     }
     
     std::cout << "Number of Components: " << numUniqueComponents << std::endl;
-    cout << endl;
-    for( int i=0; i< 50; i++) cout << "#";
-    cout << endl;
+
 }
 
 
@@ -896,7 +899,8 @@ void myObjType::initAdjacencyLists()
     adjFacesToEdge = {};
     adjVerticesToEdge = {};
     adjVerticesToVertex = {};
-    
+    adjFacesToFace = {};
+
     
     // 1. Init adjFacesToEdge, adjVerticesToVertex and adjFacesToVertex
     // For an edge given by two vertices, store the adjacent faces
