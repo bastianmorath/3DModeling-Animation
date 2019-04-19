@@ -67,18 +67,27 @@ namespace helper{
         return std::make_pair(v0, v1);
     }
 
- 
+    template<class T>
+    typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
+    almost_equal(T x, T y, int ulp)
+    {
+        // the machine epsilon has to be scaled to the magnitude of the values used
+        // and multiplied by the desired precision in ULPs (units in the last place)
+        return std::abs(x-y) <= std::numeric_limits<T>::epsilon() * std::abs(x+y) * ulp
+        // unless the result is subnormal
+        || std::abs(x-y) < std::numeric_limits<T>::min();
+    }
+    
     std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v){
         
         for (int i=1; i<= vcount;i++){
-            //if (std::fabs(vList[i][0]-v[0]) < EPSILON   && std::fabs(vList[i][1]-v[1]) < EPSILON && std::fabs(vList[i][2]-v[2]) < EPSILON
-            if (vList[i][0] == v[0]  &&  vList[i][1] == v[1]  && vList[i][2] == v[2])
+            if (almost_equal(vList[i][0], v[0], 2) && almost_equal(vList[i][1], v[1], 2)  && almost_equal(vList[i][2], v[2], 2) )
+            //if (vList[i][0] == v[0]  &&  vList[i][1] == v[1]  && vList[i][2] == v[2])
                 return make_pair(false, i); // Vertex already stored
         }
         vList[vcount+1][0] = v[0];
         vList[vcount+1][1] = v[1];
         vList[vcount+1][2] = v[2];
-        
         return make_pair(true, vcount+1);
     }
     

@@ -31,12 +31,12 @@ private:
     bool subdivided = false; // If we subdivided, we have to recompute colors etc.
     bool edgesDrawnAfterSubdivision = true; // If we subdivided, we have to recompute colors etc.
 
-    std::map<int, int> componentIDs; // Determines the componentID for each traignle. Used for coloring
+    std::map<int, int> componentIDs; // Determines the componentID for each triangle. Used for coloring
     std::map<std::set<int>, std::set<int>> adjFacesToEdge;     // faces adjacent to an edge given by two vertices
     std::map<std::set<int>, std::set<int>> adjVerticesToEdge; // vertices adjacent to an edge given by two vertices
     std::map<int, std::set<int>> adjVerticesToVertex; // Vertices adjacent to a vertex
     std::map<int, std::set<int>> adjFacesToVertex; // Index of faces that are adjacent to a given vertex (Version is NOT endoded)
-    std::map<int, std::set<int>> adjFacesToFace; // orTri of faces that are adjacent to a given face
+    std::map<int, std::set<int>> adjFacesToFace; // Index of faces that are adjacent to a given face
 
 	int statMinAngle[18];
 	int statMaxAngle[18];
@@ -66,7 +66,6 @@ private:
     /*
         Used for computing fNext
      */
-    void computeFNextList();
     void changeNeighbors(std::vector<int> t_previous_indices, const int t_currentIndex, std::vector<int> t_triangle_ids);
 
     bool objectHasEdges();
@@ -77,6 +76,7 @@ private:
 public:
     void subdivideLoop();
     void subdivideBarycentric();
+    void subdivideIdentity();
 
     void drawEdges();
 

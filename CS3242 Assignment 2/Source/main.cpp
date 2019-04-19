@@ -114,6 +114,7 @@ void keyboard (unsigned char key, int x, int y)
     case 'l':
     case 'L':
             myObj.subdivideLoop();
+            //myObj.subdivideIdentity(); // TODO: change
         break;
     case 'b':
     case 'B':
@@ -251,3 +252,5 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+

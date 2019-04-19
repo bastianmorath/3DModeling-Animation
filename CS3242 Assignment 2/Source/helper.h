@@ -8,7 +8,7 @@
 
 #define MAXV 1000000
 #define MAXT 1000000
-#define EPSILON std::numeric_limits<double>::epsilon()
+#define EPSILON s
 #include <stdio.h>
 #include <set>
 #include <map>
