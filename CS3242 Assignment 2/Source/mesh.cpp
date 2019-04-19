@@ -138,6 +138,8 @@ void myObjType::writeFile(const char *filename)
 
 void myObjType::readFile(const char *filename)
 {
+    vcount = 0;
+    tcount = 0;
     cout << "Opening " << filename << endl;
     ifstream inFile;
     inFile.open(filename);
@@ -560,7 +562,7 @@ void myObjType::subdivideBarycentric(){
 
 
 
-void myObjType::subdivideLoop()
+void myObjType::subdivideLoop(int beta_version)
 {
     cout << endl;
     for( int i=0; i< 50; i++) cout << "#";
@@ -600,7 +602,7 @@ void myObjType::subdivideLoop()
             if (adjacentVertexVertices.size() == 2) { // We have an adge with only one
                 newVertex = helper::getEvenLoopVertexEdge(vList, edgeVertexIdx1, *std::next(adjacentVertexVertices.begin(), 0), *std::next(adjacentVertexVertices.begin(), 1));
             } else {
-                newVertex = helper::getEvenLoopVertex(vList, edgeVertexIdx1, adjacentVertexVertices);
+                newVertex = helper::getEvenLoopVertex(vList, edgeVertexIdx1, adjacentVertexVertices, beta_version);
             }
             
             evenVertices.push_back(newVertex);

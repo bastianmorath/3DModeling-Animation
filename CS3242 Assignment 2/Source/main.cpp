@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "mesh.h"
+#include <vector>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -31,13 +32,15 @@ bool m_Smooth = FALSE;
 bool m_edges = FALSE;
 bool m_Highlight = FALSE;
 bool m_color_components = FALSE;
+int m_loop_subdivision_beta = 1;
+
 GLfloat angle = 0;   /* in degrees */
 GLfloat angle2 = 0;   /* in degrees */
 GLfloat zoom = 1.0;
 int mouseButton = 0;
 int moving, startx, starty;
 
-#define NO_OBJECT 4;
+#define NO_OBJECT 10;
 int current_object = 0;
 
 using namespace std;
@@ -113,8 +116,15 @@ void keyboard (unsigned char key, int x, int y)
         break;
     case 'l':
     case 'L':
-            myObj.subdivideLoop();
-            //myObj.subdivideIdentity(); // TODO: change
+        myObj.subdivideLoop(m_loop_subdivision_beta);
+        break;
+    case '8':
+        std::cout << "Loop subdivison beta formula was changed to 1" << std::endl;
+        m_loop_subdivision_beta = 1;
+        break;
+    case '9':
+        std::cout << "Loop subdivison beta formula was changed to 2" << std::endl;
+        m_loop_subdivision_beta = 2;
         break;
     case 'b':
     case 'B':
@@ -146,25 +156,37 @@ void keyboard (unsigned char key, int x, int y)
 		cin >> filename;
 		myObj.writeFile(filename);
 		break;
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-		current_object = key - '1';
-		break;
-
 	case 'Q':
 	case 'q':
 		exit(0);
 	break;
-
+    case '1':
+        myObj.readFile("teapot.obj");
+        break;
+    case '2':
+        myObj.readFile("teddy.obj");
+        break;
+    case '3':
+        myObj.readFile("cat.obj");
+        break;
+    case '4':
+        myObj.readFile("smallcaseflipped.obj");
+        break;
+    case '5':
+        myObj.readFile("2cubes_oriented_edge.obj");
+        break;
+    case '6':
+        myObj.readFile("cubes.obj");
+        break;
+    case '7':
+        myObj.readFile("face.obj");
+        break;
 	default:
 	break;
 	}
 
 	glutPostRedisplay();
 }
-
 
 
 void
@@ -198,31 +220,38 @@ void motion(int x, int y)
   
 }
 
+
+
 int main(int argc, char **argv)
 {
+ 
+    
+    
 	char filename[255];
 	cout<<"CS3242 "<< endl<< endl;
 
+    //cout << "Enter the filename you want to open:";
+	//cin >> filename;
 
-
-	cout << "Enter the filename you want to open:";
-	cin >> filename;
-    myObj.readFile(filename);
-
-	//myObj.readFile("teapot.obj");
+	myObj.readFile("teapot.obj");
 
 
 
 	//cout << "1-4: Draw different objects"<<endl;
 	cout << "S: Toggle Smooth Shading"<<endl;
 	cout << "H: Toggle Highlight"<<endl;
-    cout << "L: Loop Subdivision"<<endl;
+    cout << "L: Loop Subdivision. Toggle beta-formula by pressing key 8 or 9"<<endl;
     cout << "C: Color Components" << endl;
+    cout << "1-7: Loop through different objects" << endl;
+
     cout << "B: Barycentric Subdivision"<<endl;
     cout << "E: Draw Edges"<<endl;
 	cout << "W: Draw Wireframe"<<endl;
 	cout << "P: Draw Polygon"<<endl;
 	cout << "V: Draw Vertices"<<endl;
+    cout << "Left Arrow: Iterate one left in the list of objects"<<endl;
+    cout << "Right Arrow:  Iterate one right in the list of objects"<<endl;
+
 	cout << "Q: Quit" <<endl<< endl;
 
 	cout << "Left mouse click and drag: rotate the object"<<endl;
@@ -238,6 +267,7 @@ int main(int argc, char **argv)
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion);
 	glutKeyboardFunc(keyboard);
+
 	setupLighting();
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST); 

@@ -74,7 +74,7 @@ private:
         Subdivision
     */
 public:
-    void subdivideLoop();
+    void subdivideLoop(int beta_version);
     void subdivideBarycentric();
     void subdivideIdentity();
 

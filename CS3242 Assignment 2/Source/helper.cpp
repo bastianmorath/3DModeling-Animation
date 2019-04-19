@@ -120,10 +120,12 @@ namespace helper{
         return (edgeVertex1 + edgeVertex2) / 2.0 ;
     }
     
-    /*
-     v_new = v * (1-n * Beta)   + (Sum all neighbors) * Beta
+    /**
+     * @desc Calculates the even vertex in loop subdivision
+     ...
+     * @param int beta_version - Either 1 or 2, depending which beta-formula should be choosen
      */
-    Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices){
+    Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices, int beta_version){
         Eigen::Vector3d origVertex(vList[originalVertex][0], vList[originalVertex][1], vList[originalVertex][2]);
         double n = neighboringVerticesIndices.size();
 
@@ -131,8 +133,13 @@ namespace helper{
         if (n==3.0) {
             beta = 3. / 16;
         } else {
-            beta = 3.0 / 8 / n;
-            // beta = 1. / n * (5./8 - pow(3./8 + 1./4 * cos(2.*M_PI / n), 2));
+            if (beta_version == 1) {
+                beta = 3.0 / 8 / n;
+
+            } else {
+                beta = 1. / n * (5./8 - pow(3./8 + 1./4 * cos(2.*M_PI / n), 2));
+
+            }
         }
         Eigen::Vector3d sum(0.0, 0.0, 0.0);
         for (auto& vecIdx: neighboringVerticesIndices) {
