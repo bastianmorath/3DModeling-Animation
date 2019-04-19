@@ -1,9 +1,13 @@
-// CS3241Lab1.cpp : Defines the entry point for the console application.
-
+//
+//  main.cpp
+//  CS3242 Lab 1
+//
+//  Created by Bastian Morath on 04.04.19.
+//  Copyright © 2019 NUS. All rights reserved.
+//
 
 #include <iostream>
 #include "mesh.h"
-#include <vector>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -233,7 +237,7 @@ int main(int argc, char **argv)
     //cout << "Enter the filename you want to open:";
 	//cin >> filename;
 
-	myObj.readFile("teapot.obj");
+	myObj.readFile("twocubes.obj");
 
 
 

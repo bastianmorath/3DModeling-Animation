@@ -5,18 +5,15 @@
 //  Created by Bastian Morath on 04.04.19.
 //  Copyright © 2019 NUS. All rights reserved.
 //
-#include <iostream>
+
 #include "helper.h"
-#include <utility>
+#include <iostream>
 
-#include <set>
-#include <map>
-#include <vector>
 
-using namespace std;
 
 namespace helper{
-    
+    int statMinAngle[18];
+    int statMaxAngle[18];
     /**
      * @desc Finds a triangle index (from 1 to tcount) that is not in t_v. Returns the smallest one
      * @param set<int> t_v - Set of indices that have already been seen/traversed
@@ -67,98 +64,138 @@ namespace helper{
         return std::make_pair(v0, v1);
     }
 
-    template<class T>
-    typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
-    almost_equal(T x, T y, int ulp)
-    {
-        // the machine epsilon has to be scaled to the magnitude of the values used
-        // and multiplied by the desired precision in ULPs (units in the last place)
-        return std::abs(x-y) <= std::numeric_limits<T>::epsilon() * std::abs(x+y) * ulp
-        // unless the result is subnormal
-        || std::abs(x-y) < std::numeric_limits<T>::min();
-    }
-    
-    std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v){
+    bool objectHasEdges(int fNextList[MAXT][3], int triangleList[MAXT][3], int tcount){
+        std::set<std::pair<int, int>> edgeVerticesSet; 
         
-        for (int i=1; i<= vcount;i++){
-            if (almost_equal(vList[i][0], v[0], 2) && almost_equal(vList[i][1], v[1], 2)  && almost_equal(vList[i][2], v[2], 2) )
-            //if (vList[i][0] == v[0]  &&  vList[i][1] == v[1]  && vList[i][2] == v[2])
-                return make_pair(false, i); // Vertex already stored
+        for (int i = 1; i <= tcount; i++)
+        {
+            // Check each triangle
+            for (int version = 0; version < 3; version++)
+            {
+                int orTri_neighbor = fNextList[i][version];
+                if (orTri_neighbor == 0)
+                { // Edge vertices!
+                    std::pair<int, int> edgeVertices = helper::getVerticesForVersion(triangleList, i, version);
+                    edgeVerticesSet.insert(std::make_pair(edgeVertices.first, edgeVertices.second));
+                }
+            }
         }
-        vList[vcount+1][0] = v[0];
-        vList[vcount+1][1] = v[1];
-        vList[vcount+1][2] = v[2];
-        return make_pair(true, vcount+1);
+        return !edgeVerticesSet.empty();
     }
     
-    void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices){
-        tList[tcount+1][0] = vIndices[0];
-        tList[tcount+1][1] = vIndices[1];
-        tList[tcount+1][2] = vIndices[2];
-    }
-    
-    /*
-      For each edge, compute v = 3/8 * (a+b) + 1/8 * (c+d)
-    */
-    Eigen::Vector3d getOddLoopVertex(double vList[MAXV][3], int edgeV1, int edgeV2, int adjV1, int adjV2){
-        Eigen::Vector3d edgeVertex1(vList[edgeV1][0], vList[edgeV1][1], vList[edgeV1][2]);
-        Eigen::Vector3d edgeVertex2(vList[edgeV2][0], vList[edgeV2][1], vList[edgeV2][2]);
-        
-        Eigen::Vector3d adjVertex1(vList[adjV1][0], vList[adjV1][1], vList[adjV1][2]);
-        Eigen::Vector3d adjVertex2(vList[adjV2][0], vList[adjV2][1], vList[adjV2][2]);
-        
-        return 3.0 / 8.0 * (edgeVertex1 + edgeVertex2) + 1.0 / 8.0 * (adjVertex1 + adjVertex2);
-    }
-    
-    /*
-     For each edge, compute v = (a+b) / 2
-     */
-    Eigen::Vector3d getOddLoopVertexEdge(double vList[MAXV][3], int v1Idx, int v2Idx){
-        Eigen::Vector3d edgeVertex1(vList[v1Idx][0], vList[v1Idx][1], vList[v1Idx][2]);
-        Eigen::Vector3d edgeVertex2(vList[v2Idx][0], vList[v2Idx][1], vList[v2Idx][2]);
-        
-        return (edgeVertex1 + edgeVertex2) / 2.0 ;
+    bool sameOrientation(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version, int triangleList[MAXT][3])
+    {
+        std::pair<int, int> t1Vertices = getVerticesForVersion(triangleList, t_t1Index, t_t1Version);
+        std::pair<int, int> t2Vertices = getVerticesForVersion(triangleList, t_t2Index, t_t2Version);
+        return t1Vertices == t2Vertices;
     }
     
     /**
-     * @desc Calculates the even vertex in loop subdivision
-     ...
-     * @param int beta_version - Either 1 or 2, depending which beta-formula should be choosen
+     * @desc Computes the angles in all triangles and counts how many times they fall into each 10-degree angle bin
      */
-    Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices, int beta_version){
-        Eigen::Vector3d origVertex(vList[originalVertex][0], vList[originalVertex][1], vList[originalVertex][2]);
-        double n = neighboringVerticesIndices.size();
-
-        double beta = 0;
-        if (n==3.0) {
-            beta = 3. / 16;
-        } else {
-            if (beta_version == 1) {
-                beta = 3.0 / 8 / n;
-
-            } else {
-                beta = 1. / n * (5./8 - pow(3./8 + 1./4 * cos(2.*M_PI / n), 2));
-
-            }
+    void computeStatistics(double vList[MAXV][3], int vcount, int triangleList[MAXT][3], int tcount){       // Computes angles and number of vertices/triangles
+        double minAngle = 360;
+        double maxAngle = 0;
+        
+        for (int i = 1; i <= tcount; i++)
+        {
+            Eigen::Vector3d v1(vList[triangleList[i][0]]);
+            Eigen::Vector3d v2(vList[triangleList[i][1]]);
+            Eigen::Vector3d v3(vList[triangleList[i][2]]);
+            
+            Eigen::Vector3d v1_to_v2(v2 - v1);
+            Eigen::Vector3d v1_to_v3(v3 - v1);
+            Eigen::Vector3d v2_to_v3(v3 - v2);
+            
+            double angle1 = helper::calculateAngle(v1_to_v2, v1_to_v3);
+            
+            double angle2 = helper::calculateAngle(-v1_to_v2, v2_to_v3);
+            double angle3 = 180.0 - angle2 - angle1;
+            
+            double min = std::min(std::min(angle1, angle2), angle3);
+            double max = std::max(std::max(angle1, angle2), angle3);
+            
+            statMinAngle[int(floor(min / 10))] += 1;
+            statMaxAngle[int(floor(max / 10))] += 1;
+            
+            minAngle = minAngle < min ? minAngle : min;
+            maxAngle = maxAngle > max ? maxAngle : max;
         }
-        Eigen::Vector3d sum(0.0, 0.0, 0.0);
-        for (auto& vecIdx: neighboringVerticesIndices) {
-            Eigen::Vector3d v(vList[vecIdx][0], vList[vecIdx][1], vList[vecIdx][2]);
-            sum += v;
-        }
-        return origVertex * (1 - n * beta) + sum * beta;
+        std::cout << std::endl;
+        for( int i=0; i< 50; i++) std::cout << "#";
+        std::cout <<std:: endl;
+        std::cout << "Statistics for Maximum Angles" << std::endl;
+        for (int i = 0; i < 18; i++)
+            std::cout << statMaxAngle[i] << " ";
+        std::cout << std::endl;
+        std::cout << "Statistics for Minimum Angles" << std::endl;
+        for (int i = 0; i < 18; i++)
+            std::cout << statMinAngle[i] << " ";
+        std::cout << std::endl;
+        
+        std::cout << "Min. angle = " << minAngle << std::endl;
+        std::cout << "Max. angle = " << maxAngle << std::endl;
+        
+        std::cout << std::endl;
+        
+        std::cout << "No. of vertices: " << vcount << std::endl;
+        std::cout << "No. of triangles: " << tcount << std::endl;
+        
+        std::cout << std::endl;
+        for( int i=0; i< 50; i++) std::cout << "#";
+        std::cout << std::endl;
     }
     
-    /*
-     v_new = 3/4 * v + 1/8 *v1 + v2)
+    /**
+     * @desc Calculates all vertex normals, using the average of all adjacent faces, and stores it in vertexNormalList
      */
-    Eigen::Vector3d getEvenLoopVertexEdge(double vList[MAXV][3], int originalVertex,  int v1Idx, int v2Idx){
+    void fillVertexNormals(double vertexNormalList[MAXV][3], double triangleNormalList[MAXT][3], std::map<int, std::set<int>> adjFacesToVertex, int vcount)
+    {
         
-        Eigen::Vector3d vOrig(vList[originalVertex][0], vList[originalVertex][1], vList[originalVertex][2]);
-        Eigen::Vector3d v1(vList[v1Idx][0], vList[v1Idx][1], vList[v1Idx][2]);
-        Eigen::Vector3d v2(vList[v2Idx][0], vList[v2Idx][1], vList[v2Idx][2]);
-
-        return 3.0 / 4 * vOrig + 1./8 * (v1 + v2);
+        for (int i = 1; i <= vcount; i++)
+        {
+            std::set<int> adjacent_triangle_indices = adjFacesToVertex[i];
+            
+            Eigen::Vector3d sumVector(0, 0, 0);
+            
+            for (auto const &j : adjacent_triangle_indices)
+            {
+                sumVector[0] += triangleNormalList[j][0];
+                sumVector[1] += triangleNormalList[j][1];
+                sumVector[2] += triangleNormalList[j][2];
+            }
+            sumVector.normalize();
+            
+            vertexNormalList[i][0] = sumVector[0];
+            vertexNormalList[i][1] = sumVector[1];
+            vertexNormalList[i][2] = sumVector[2];
+        }
     }
+ 
+    /**
+     * @desc Calculates all face normals, using the cross product, and stores it in triangleNormalList
+     */
+    void fillFaceNormals(double triangleNormalList[MAXT][3], double vertexNormalList[MAXV][3],double vList[MAXV][3], int triangleList [MAXT][3], int tcount)
+    {
+        
+        // We suggest you to compute the normals here
+        for (int i = 1; i <= tcount; i++)
+        {
+            Eigen::Vector3d v1(vList[triangleList[i][0]]);
+            Eigen::Vector3d v2(vList[triangleList[i][1]]);
+            Eigen::Vector3d v3(vList[triangleList[i][2]]);
+            
+            Eigen::Vector3d v1_to_v2(v2 - v1);
+            Eigen::Vector3d v1_to_v3(v3 - v1);
+            
+            Eigen::Vector3d crossP = v1_to_v2.cross(v1_to_v3);
+            crossP.normalize();
+            
+            triangleNormalList[i][0] = crossP[0];
+            triangleNormalList[i][1] = crossP[1];
+            triangleNormalList[i][2] = crossP[2];
+        }
+    }
+    
 }
 

@@ -1,5 +1,5 @@
 //
-//  helper.hpp
+//  helper.h
 //  CS3242 Lab 1
 //
 //  Created by Bastian Morath on 04.04.19.
@@ -9,28 +9,34 @@
 #define MAXV 1000000
 #define MAXT 1000000
 #define EPSILON s
-#include <stdio.h>
+
+#include <Eigen/Dense>
 #include <set>
 #include <map>
-#include <Eigen/Dense>
-
 
 namespace helper {
     
-    int getIndexNotYetSeen(int tcount, const std::set<int> t_v);
-    double calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2);
-    std::pair<int, int> getVerticesForVersion(int triangleList[MAXT][3], const int t_triangleIndex, const int t_version);
-   
     
-    std::pair<bool, int> addVertexToVertexList(double vList[MAXV][3], int vcount, Eigen::Vector3d v);
-    void addTriangleToTriangleList(int tList[MAXV][3], int tcount,  Eigen::Vector3i vIndices);
+    
+    int getIndexNotYetSeen(int tcount, const std::set<int> t_v); // returns a number [1, tcount] that is not in t_v
+    
+    double calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2);
+    
+    // Given a triangle index and a version, returns the two vertex indices
+    std::pair<int, int> getVerticesForVersion(int triangleList[MAXT][3], const int t_triangleIndex, const int t_version);
+    
+    bool objectHasEdges(int fNextList[MAXT][3], int triangleList[MAXT][3], int tcount);
+    
+    // Checks if both triangles have the same orienation
+    bool sameOrientation(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version, int triangleList[MAXT][3]);
+
+    void computeStatistics(double vList[MAXV][3], int vcount, int triangleList[MAXT][3], int tcount);      // Computes angles and number of vertices/triangles
+
+    void fillVertexNormals(double vertexNormalList[MAXV][3], double triangleNormalList[MAXT][3], std::map<int, std::set<int>> adjFacesToVertex, int vcount);
+    
+    void fillFaceNormals(double triangleNormalList[MAXT][3], double vertexNormalList[MAXV][3],double vList[MAXV][3], int triangleList [MAXT][3], int tcount);
 
     
-    Eigen::Vector3d getOddLoopVertex(double vList[MAXV][3], int edgeV1, int edgeV2, int adjV1, int adjV2);
-    Eigen::Vector3d getOddLoopVertexEdge(double vList[MAXV][3], int v1Idx, int v2Idx);
-    
-    Eigen::Vector3d getEvenLoopVertex(double vList[MAXV][3], int originalVertex, std::set<int> neighboringVerticesIndices, int beta_version);
-    Eigen::Vector3d getEvenLoopVertexEdge(double vList[MAXV][3], int originalVertex, int v1Idx, int v2Idx);
 
 };
 
