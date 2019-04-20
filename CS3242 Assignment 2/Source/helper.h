@@ -15,9 +15,7 @@
 #include <map>
 
 namespace helper {
-    
-    
-    
+
     int getIndexNotYetSeen(int tcount, const std::set<int> t_v); // returns a number [1, tcount] that is not in t_v
     
     double calculateAngle(const Eigen::Vector3d t_v1, const Eigen::Vector3d t_v2);
@@ -29,15 +27,13 @@ namespace helper {
     
     // Checks if both triangles have the same orienation
     bool sameOrientation(const int t_t1Index, const int t_t1Version, const int t_t2Index, const int t_t2Version, int triangleList[MAXT][3]);
-
-    void computeStatistics(double vList[MAXV][3], int vcount, int triangleList[MAXT][3], int tcount);      // Computes angles and number of vertices/triangles
+    
+    // Computes angles and number of vertices/triangles
+    void computeStatistics(double vList[MAXV][3], int vcount, int triangleList[MAXT][3], int tcount);
 
     void fillVertexNormals(double vertexNormalList[MAXV][3], double triangleNormalList[MAXT][3], std::map<int, std::set<int>> adjFacesToVertex, int vcount);
     
-    void fillFaceNormals(double triangleNormalList[MAXT][3], double vertexNormalList[MAXV][3],double vList[MAXV][3], int triangleList [MAXT][3], int tcount);
-
-    
-
+    void fillFaceNormals(double triangleNormalList[MAXT][3], double vList[MAXV][3], int triangleList[MAXT][3], int tcount);
 };
 
 
