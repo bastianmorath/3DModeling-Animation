@@ -155,7 +155,7 @@ void keyboard(unsigned char key, int x, int y)
 		exit(0);
 		break;
 	case '1':
-		myObj.readFile("teapot.obj");
+		myObj.readFile("cube.off");
 		break;
 	case '2':
 		myObj.readFile("teddy.obj");
@@ -227,15 +227,14 @@ void writeObjToFile() {
 int main(int argc, char **argv)
 {
 
-	char filename[255];
 	cout << "CS3242 " << endl
 		 << endl;
-
+    // std::string filename;
 	//cout << "Enter the filename you want to open:";
 	//cin >> filename;
 
-	myObj.readFile("twocubes.obj");
-
+    myObj.readFile("cube.off");
+    
 	//cout << "1-4: Draw different objects"<<endl;
 	cout << "S: Toggle Smooth Shading" << endl;
 	cout << "H: Toggle Highlight" << endl;

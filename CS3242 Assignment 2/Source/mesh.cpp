@@ -117,34 +117,76 @@ void myObjType::draw(bool smooth, bool edges, bool t_color_components)
 }
 
 /**
- * @descWrites current object to a file
- * @param const char *filename - name of object-file that curent object should be written to
+ * @desc Writes current object to a file
+ * @param str::string filename - name of object-file that curent object should be written to.
+ *                               Can be .obj or .off!
  */
-void myObjType::writeFile(const char *filename)
+void myObjType::writeFile(std::string filename)
 {
+    if (filename.find(".off") != std::string::npos) {
+        std::ostringstream lines;
+        lines << "OFF" << endl;
 
-    std::ostringstream lines;
-    for (int i = 1; i <= vcount; i++)
-    {
-        lines << "v " << std::to_string(vList[i][0]) << " " << std::to_string(vList[i][1]) << " " << std::to_string(vList[i][2]) << endl;
+        lines << vcount << " " << tcount << endl;
+        for (int i = 1; i <= vcount; i++)
+        {
+            lines << std::to_string(vList[i][0]) << " " << std::to_string(vList[i][1]) << " " << std::to_string(vList[i][2]) << endl;
+        }
+        for (int i = 1; i <= tcount; i++)
+        {
+            lines << "3 " << std::to_string(triangleList[i][0] -1) << " " << std::to_string(triangleList[i][1] - 1) << " " << std::to_string(triangleList[i][2] -1) << endl;
+        }
+
+        std::ofstream outfile(filename);
+        outfile << lines.str() << endl;
+        
+        outfile.close();
+    } else if (filename.find(".obj") != std::string::npos) {
+        std::ostringstream lines;
+        for (int i = 1; i <= vcount; i++)
+        {
+            lines << "v " << std::to_string(vList[i][0]) << " " << std::to_string(vList[i][1]) << " " << std::to_string(vList[i][2]) << endl;
+        }
+        for (int i = 1; i <= tcount; i++)
+        {
+            lines << "f " << std::to_string(triangleList[i][0]) << " " << std::to_string(triangleList[i][1]) << " " << std::to_string(triangleList[i][2]) << endl;
+        }
+        
+        std::ofstream outfile(filename);
+        outfile << lines.str() << endl;
+        
+        outfile.close();
+    } else {
+        cout << "File format not supported " << filename << endl;
+        exit(1);
     }
-    for (int i = 1; i <= tcount; i++)
-    {
-        lines << "f " << std::to_string(triangleList[i][0]) << " " << std::to_string(triangleList[i][1]) << " " << std::to_string(triangleList[i][2]) << endl;
-    }
+    
+    cout << "Obejct successfully written to disk as ' " << filename << "'" << endl;
 
-    std::ofstream outfile(filename);
-    outfile << lines.str() << endl;
-
-    outfile.close();
+  
 }
 
 /**
- * @desc Opens a specific obejct file, inits triangle and vertex lists, then inits adjacency lists, computes components,
- * orients triangles and outputs some statistics
- * @param const char *filename - name of object-file that should be opened
+ * @desc Opens a file, inits triangle and vertex lists, then inits adjacency lists, computes components, orients triangles and outputs some statistics
+ * @param std::string filename - name of file that should be opened
  */
-void myObjType::readFile(const char *filename)
+void myObjType::readFile(std::string filename) {
+    if (filename.find(".off") != std::string::npos) {
+        readFile_off(filename);
+    } else if (filename.find(".obj") != std::string::npos) {
+        readFile_obj(filename);
+    } else {
+        cout << "File format not supported " << filename << endl;
+        exit(1);
+    }
+}
+
+
+/**
+ * @desc Opens a object file, inits triangle and vertex lists, then inits adjacency lists, computes components, orients triangles and outputs some statistics
+ * @param std::string filename - name of object-file that should be opened
+ */
+void myObjType::readFile_obj(std::string filename)
 {
     vcount = 0;
     tcount = 0;
@@ -217,27 +259,27 @@ void myObjType::readFile(const char *filename)
             }
         }
     }
-
+    
     cout << "Set up adjacency lists and fnext " << endl;
     initAdjacencyLists();
-
+    
     cout << "Calculate Face Normals " << endl;
     helper::fillFaceNormals(triangleNormalList, vList, triangleList, tcount);
-
+    
     cout << "Calculate Vertex Normals " << endl;
     helper::fillVertexNormals(vertexNormalList, triangleNormalList, adjFacesToVertex, vcount);
-
+    
     cout << "Orienting Triangles..." << endl;
     orientTriangles();
-
+    
     cout << endl;
     for (int i = 0; i < 50; i++)
         cout << "#";
     cout << endl;
-
+    
     cout << "Compute number of components..." << endl;
     computeNumberOfComponents();
-
+    
     helper::computeStatistics(vList, vcount, triangleList, tcount);
     colors = std::vector< std::vector<double> >();
     for (int c = 0; c < numUniqueComponents; c++)
@@ -249,6 +291,138 @@ void myObjType::readFile(const char *filename)
         cout << "_";
     cout << endl;
 }
+#include <sstream>
+
+/**
+ * @desc Opens a.off file, inits triangle and vertex lists, then inits adjacency lists, computes components, orients triangles and outputs some statistics
+ * Note: Compared to .obj files, in .off file, vertex indices start at 0!! -> Takes care of this
+ * @param std::string filename - name of off-file that should be opened
+ */
+void myObjType::readFile_off(std::string filename)
+{
+    vcount = 0;
+    tcount = 0;
+    cout << endl;
+    for (int i = 0; i < 50; i++)
+        cout << "_";
+    cout << endl;
+    cout << "Opening " << filename << endl;
+    std::ifstream inFile;
+    inFile.open(filename);
+    if (!inFile.is_open())
+    {
+        cout << "We cannot find your file " << filename << endl;
+        exit(1);
+    }
+    
+    std::string line;
+    int i, j;
+    bool firstVertex = 1;
+    double currCood;
+    int lineCount = 0;
+    int numVertices = 0;
+    int numFaces = 0;
+    while (getline(inFile, line))
+    {
+        if (lineCount==0) {
+            if (line.substr(0, 3) != "OFF") {
+                cout << "This is not an OFF file! " << filename << endl;
+                exit(1);
+            }
+        } else if (lineCount==1) {
+            std::stringstream ss(line.c_str());
+            int a, b;
+            ss >> a >> b;
+            numVertices = a;
+            numFaces = b;
+        } else {
+            if (lineCount < numFaces + numVertices + 2) {
+                if (lineCount <= numVertices + 1)  { // Vertex
+                    vcount++;
+                    i = 0;
+                    const char *linec = line.data();
+                    for (int k = 0; k < 3; k++)
+                    { // k is 0,1,2 for x,y,z
+                        while (linec[i] == ' ')
+                            i++;
+                        j = i;
+                        while (linec[j] != ' ')
+                            j++;
+                        currCood = vList[vcount][k] = atof(line.substr(i, j - i).c_str());
+                        if (firstVertex)
+                            lmin[k] = lmax[k] = currCood;
+                        else
+                        {
+                            if (lmin[k] > currCood)
+                                lmin[k] = currCood;
+                            if (lmax[k] < currCood)
+                                lmax[k] = currCood;
+                        }
+                        i = j;
+                    }
+                    firstVertex = 0;
+                    
+                } else { // Faces
+                    if (line.substr(0, 1) != "3") {
+                        cout << "Program only accepts triangles!" << filename << endl;
+                        exit(1);
+                    }
+                    tcount++;
+                    i = 1;
+                    const char *linec = line.data();
+                    for (int k = 0; k < 3; k++)
+                    {
+                        while (linec[i] == ' ')
+                            i++;
+                        j = i;
+                        while (linec[j] != ' ' && linec[j] != '\\')
+                            j++;
+                        
+                        triangleList[tcount][k] = atof(line.substr(i, j - i).c_str()) + 1; // !! In .off file, vertex indices start at 1
+                        i = j;
+                        fNextList[tcount][k] = 0;
+                        while (linec[j] != ' ')
+                            j++;
+                    }
+                }
+            }
+        }
+        lineCount++;
+    }
+    
+    cout << "Set up adjacency lists and fnext " << endl;
+    initAdjacencyLists();
+    
+    cout << "Calculate Face Normals " << endl;
+    helper::fillFaceNormals(triangleNormalList, vList, triangleList, tcount);
+    
+    cout << "Calculate Vertex Normals " << endl;
+    helper::fillVertexNormals(vertexNormalList, triangleNormalList, adjFacesToVertex, vcount);
+    
+    cout << "Orienting Triangles..." << endl;
+    orientTriangles();
+    
+    cout << endl;
+    for (int i = 0; i < 50; i++)
+        cout << "#";
+    cout << endl;
+    
+    cout << "Compute number of components..." << endl;
+    computeNumberOfComponents();
+    
+    helper::computeStatistics(vList, vcount, triangleList, tcount);
+    colors = std::vector< std::vector<double> >();
+    for (int c = 0; c < numUniqueComponents; c++)
+    {
+        colors.push_back({((double)rand() / (RAND_MAX)), ((double)rand() / (RAND_MAX)), ((double)rand() / (RAND_MAX))});
+    }
+    cout << endl;
+    for (int i = 0; i < 50; i++)
+        cout << "_";
+    cout << endl;
+}
+
+
 
 int myObjType::enext(const int t_orTri)
 {

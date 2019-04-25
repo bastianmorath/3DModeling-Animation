@@ -23,8 +23,10 @@ class myObjType
         tcount = 0;
     };
     void draw(const bool t_smooth, const bool t_edges, const bool t_color_components);
-    void readFile(const char *filename); // assumming file contains a manifold
-    void writeFile(const char *filename);
+    void readFile(std::string filename);
+   
+
+    void writeFile(std::string filename);
 
     /*
      Subdivision
@@ -41,6 +43,11 @@ class myObjType
     double vertexNormalList[MAXV][3];   // storing vertex normals
     double triangleNormalList[MAXT][3]; // storing triangle normals
 
+    
+    void readFile_obj(std::string filename); // Reads in a .obj file
+    void readFile_off(std::string filename); // Reads in a .off file
+    
+    
     std::vector< std::vector<double> > colors; // Holds colors for each component
     double lmax[3]; // the maximum coordinates of x,y,z
     double lmin[3]; // the minimum coordinates of x,y,z
