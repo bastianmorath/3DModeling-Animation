@@ -117,9 +117,9 @@ void myObjType::draw(bool smooth, bool edges, bool t_color_components)
 }
 
 /**
- * @desc Writes current object to a file
+ * @desc Writes current object to a file. Auotomatically detects .obj or .off file-type
  * @param str::string filename - name of object-file that curent object should be written to.
- *                               Can be .obj or .off!
+ *                               Can be .obj or .off format!
  */
 void myObjType::writeFile(std::string filename)
 {

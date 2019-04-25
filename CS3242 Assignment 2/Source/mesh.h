@@ -24,8 +24,6 @@ class myObjType
     };
     void draw(const bool t_smooth, const bool t_edges, const bool t_color_components);
     void readFile(std::string filename);
-   
-
     void writeFile(std::string filename);
 
     /*

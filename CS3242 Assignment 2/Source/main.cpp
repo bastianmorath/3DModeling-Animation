@@ -174,7 +174,10 @@ void keyboard(unsigned char key, int x, int y)
 	case '6':
 		myObj.readFile("twocubes.obj");
 		break;
-	case 'r':
+    case '7':
+        myObj.readFile("face.obj");
+        break;
+    case 'r':
     case 'R':
 
         {
@@ -249,7 +252,7 @@ int main(int argc, char **argv)
 	cout << "H: Toggle Highlight" << endl;
 	cout << "L: Loop Subdivision. Toggle beta-formula by pressing key 8 or 9" << endl;
 	cout << "C: Color Components" << endl;
-	cout << "1-6: Loop through different objects" << endl;
+	cout << "1-7: Loop through different objects" << endl;
     cout << "R: Read specific .obj or .off file" << endl;
 
 	cout << "B: Barycentric Subdivision" << endl;
