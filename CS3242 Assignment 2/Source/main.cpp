@@ -146,10 +146,12 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case 'o':
 	case 'O':
+        {
 		cout << "Enter the filename you want to write:";
         std::cin >> filename;
 		myObj.writeFile(filename);
 		break;
+        }
 	case 'Q':
 	case 'q':
 		exit(0);
@@ -172,9 +174,16 @@ void keyboard(unsigned char key, int x, int y)
 	case '6':
 		myObj.readFile("twocubes.obj");
 		break;
-	case '7':
-		myObj.readFile("face.obj");
+	case 'r':
+    case 'R':
+
+        {
+        std::string filename;
+        cout << "Enter the filename you want to open:";
+        std::cin >> filename;
+        myObj.readFile(filename);
 		break;
+        }
 	default:
 		break;
 	}
@@ -240,7 +249,8 @@ int main(int argc, char **argv)
 	cout << "H: Toggle Highlight" << endl;
 	cout << "L: Loop Subdivision. Toggle beta-formula by pressing key 8 or 9" << endl;
 	cout << "C: Color Components" << endl;
-	cout << "1-7: Loop through different objects" << endl;
+	cout << "1-6: Loop through different objects" << endl;
+    cout << "R: Read specific .obj or .off file" << endl;
 
 	cout << "B: Barycentric Subdivision" << endl;
 	cout << "E: Draw Edges" << endl;
