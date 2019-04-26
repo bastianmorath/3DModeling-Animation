@@ -241,13 +241,9 @@ int main(int argc, char **argv)
 
 	cout << "CS3242 " << endl
 		 << endl;
-    // std::string filename;
-	//cout << "Enter the filename you want to open:";
-	//cin >> filename;
 
-    myObj.readFile("cube.off");
+    myObj.readFile("twocubes.obj");
     
-	//cout << "1-4: Draw different objects"<<endl;
 	cout << "S: Toggle Smooth Shading" << endl;
 	cout << "H: Toggle Highlight" << endl;
 	cout << "L: Loop Subdivision. Toggle beta-formula by pressing key 8 or 9" << endl;
@@ -278,7 +274,7 @@ int main(int argc, char **argv)
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion);
 	glutKeyboardFunc(keyboard);
-
+    glClearColor(0.227, 0.227, 0.31, 1.0f);
 	setupLighting();
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);

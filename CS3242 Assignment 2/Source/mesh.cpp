@@ -38,7 +38,6 @@ using std::endl;
  */
 void myObjType::draw(bool smooth, bool edges, bool t_color_components)
 {
-
     glEnable(GL_LIGHTING);
 
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
